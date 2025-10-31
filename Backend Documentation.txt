@@ -1,0 +1,10 @@
+Connection str for mongodb 
+
+mongodb+srv://<db_username>:<db_password>@cluster0.aktm1.mongodb.net/
+
+
+starting backend 
+yarn start 
+
+
+mnoTSO0FxEtA1j83
