@@ -59,6 +59,21 @@ app.get("/api/orders", async (req, res) => {
   }
 });
 
+
+// GET all orders (optionally filter by status)
+app.get("/api/orders/status", async (req, res) => {
+  try {
+    const { status } = req.query; // e.g., /api/orders?status=Pending
+    const filter = status ? { status } : {}; // if status is provided, filter by it
+    const orders = await Order.find(filter).sort({ date: -1 });
+    res.json(orders);
+  } catch (err) {
+    console.error("❌ Error fetching orders:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+
 // ✅ POST (Create new order)
 app.post("/api/orders", async (req, res) => {
   console.log("📦 Incoming order:", req.body); // <-- debugging
@@ -72,6 +87,8 @@ app.post("/api/orders", async (req, res) => {
     res.status(400).json({ message: error.message });
   }
 });
+
+
 
 // ✅ DELETE (Remove order by ID)
 app.delete("/api/orders/:id", async (req, res) => {
