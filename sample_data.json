@@ -1,0 +1,83 @@
+[
+  {
+    "customer": {
+      "name": "Daniel Temesgen",
+      "email": "daniel@example.com",
+      "address": "Addis Ababa, Ethiopia"
+    },
+    "shipping": "Standard Delivery",
+    "payment": "Telebirr",
+    "advance": 200,
+    "items": [
+      { "name": "T-Shirt", "price": 499.99, "quantity": 2 },
+      { "name": "Jeans", "price": 1299.99, "quantity": 1 },
+      { "name": "Sneakers", "price": 2999.99, "quantity": 1 }
+    ],
+    "total": 5299.96,
+    "status": "Pending"
+  },
+  {
+    "customer": {
+      "name": "Mimi Solomon",
+      "email": "mimi.solomon@example.com",
+      "address": "Bole, Addis Ababa"
+    },
+    "shipping": "Express",
+    "payment": "Cash on Delivery",
+    "advance": 0,
+    "items": [
+      { "name": "Dress", "price": 899.99, "quantity": 1 },
+      { "name": "Heels", "price": 1599.99, "quantity": 1 }
+    ],
+    "total": 2499.98,
+    "status": "Processing"
+  },
+  {
+    "customer": {
+      "name": "Samuel Abate",
+      "email": "samuel.abate@example.com",
+      "address": "Piassa, Addis Ababa"
+    },
+    "shipping": "Standard Delivery",
+    "payment": "Telebirr",
+    "advance": 100,
+    "items": [
+      { "name": "Cap", "price": 199.99, "quantity": 1 },
+      { "name": "Shorts", "price": 799.99, "quantity": 2 }
+    ],
+    "total": 1799.97,
+    "status": "Shipped"
+  },
+  {
+    "customer": {
+      "name": "Helen Tadesse",
+      "email": "helen.tadesse@example.com",
+      "address": "Gerji, Addis Ababa"
+    },
+    "shipping": "Next Day",
+    "payment": "Credit (Telebirr)",
+    "advance": 1000,
+    "items": [
+      { "name": "Bag", "price": 999.99, "quantity": 1 },
+      { "name": "Sunglasses", "price": 499.99, "quantity": 1 }
+    ],
+    "total": 1499.98,
+    "status": "Delivered"
+  },
+  {
+    "customer": {
+      "name": "Abel Getachew",
+      "email": "abel.getachew@example.com",
+      "address": "CMC, Addis Ababa"
+    },
+    "shipping": "Express",
+    "payment": "Telebirr",
+    "advance": 500,
+    "items": [
+      { "name": "Hoodie", "price": 799.99, "quantity": 1 },
+      { "name": "Sneakers", "price": 2999.99, "quantity": 1 }
+    ],
+    "total": 3799.98,
+    "status": "Pending"
+  }
+]

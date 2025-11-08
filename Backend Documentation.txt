@@ -3,6 +3,16 @@ Connection str for mongodb
 mongodb+srv://<db_username>:<db_password>@cluster0.aktm1.mongodb.net/
 
 
+sudo docker stop mongodb
+
+sudo docker start mongodb
+
+sudo docker rm -f mongodb
+
+connection string            mongodb://dani:dani@localhost:27017/
+
+
+
 starting backend 
 yarn start 
 

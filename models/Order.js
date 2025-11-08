@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
 
+// ✅ Define the schema
 const orderSchema = new mongoose.Schema({
   customer: {
     name: { type: String, required: true },
@@ -18,7 +19,11 @@ const orderSchema = new mongoose.Schema({
   ],
   total: { type: Number, required: true },
   status: { type: String, default: "Pending" },
-  date: { type: Date, default: Date.now }
+  date: { type: Date, default: Date.now },
 });
 
-module.exports = mongoose.model("Order", orderSchema);
+// ✅ Create and export the model
+const Order = mongoose.model("Order", orderSchema);
+
+// ✅ Export both schema and model
+module.exports = { Order, orderSchema };
