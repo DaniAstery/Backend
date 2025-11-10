@@ -81,6 +81,22 @@ app.get("/api/orders/status", async (req, res) => {
 });
 
 
+
+// using app
+app.get("/api/orders/id/:id", async (req, res) => {
+  try {
+    const order = await Order.findOne({ "customer.id": req.params.id });
+    if (!order) return res.status(404).json({ message: "Order not found" });
+    res.json(order);
+  } catch (error) {
+    console.error("Error fetching order by customer.id:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+
+
+
 // ✅ POST (Create new order)
 app.post("/api/orders", async (req, res) => {
   console.log("📦 Incoming order:", req.body); // <-- debugging
