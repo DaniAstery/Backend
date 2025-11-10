@@ -112,33 +112,32 @@ app.post("/api/orders", async (req, res) => {
 });
 
 
+// ✅ PUT (Update order status)from pending to completed to deleted
 
-// ✅ DELETE (Remove order by ID)
-app.delete("/api/orders/:id", async (req, res) => {
-  try {
-    const deletedOrder = await Order.findByIdAndDelete(req.params.id);
-    if (!deletedOrder) return res.status(404).json({ message: "Order not found" });
-    res.json({ message: "✅ Order deleted successfully" });
-  } catch (error) {
-    console.error("❌ Error deleting order:", error);
-    res.status(500).json({ message: "Server error" });
-  }
-});
-
-// ✅ PUT (Update order by ID)
+// Update order status by customer.id
 app.put("/api/orders/:id", async (req, res) => {
   try {
-    const updatedOrder = await Order.findByIdAndUpdate(req.params.id, req.body, {
-      new: true,
-      runValidators: true,
-    });
-    if (!updatedOrder) return res.status(404).json({ message: "Order not found" });
-    res.json(updatedOrder);
+    const order = await Order.findOne({ "customer.id": req.params.id });
+    if (!order) return res.status(404).json({ message: "Order not found" });
+
+    // Logic to toggle status
+    if (order.status === "Pending") {
+      order.status = "Completed";
+    } else if (order.status === "Completed") {
+      order.status = "Deleted";
+    }
+
+    await order.save();
+
+    res.json({ message: `Order updated to ${order.status}`, order });
   } catch (error) {
     console.error("❌ Error updating order:", error);
     res.status(400).json({ message: error.message });
   }
 });
+
+
+
 
 // ✅ Start server
 const PORT = 5001;
