@@ -21,6 +21,12 @@ mongoose.connect("mongodb://dani:dani@localhost:27017/AsteyaDB?authSource=admin"
 // ✅ Define schema directly here
 const orderSchema = new mongoose.Schema({
   customer: {
+    id: {
+      type: String,
+      default: function () {
+        return "ORD-" + Date.now();
+      },
+    },
     name: { type: String, required: true },
     email: { type: String, required: true },
     address: { type: String, required: true },
@@ -53,6 +59,7 @@ app.get("/api/orders", async (req, res) => {
     console.log("📦 GET /api/orders called");
     const orders = await Order.find({});
     res.json(orders);
+    console.log("✅ Orders fetched:", orders);
   } catch (error) {
     console.error("❌ Error fetching orders:", error);
     res.status(500).json({ message: "Server error" });
