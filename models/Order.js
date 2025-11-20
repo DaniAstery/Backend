@@ -9,7 +9,14 @@ const orderSchema = new mongoose.Schema({
     address: { type: String, required: true },
   },
   shipping: { type: String },
-  payment: { type: String },
+  
+  payment: {
+  method: { type: String, enum: ["SWIFT", "PayPal", "Telebirr", "CBE"], default: "SWIFT" },
+  referenceNumber: String,
+  status: { type: String, enum: ["Pending", "Confirmed", "Failed"], default: "Pending" },
+  date: { type: Date, default: Date.now }
+},
+
   advance: { type: Number, default: 0 },
   items: [
     {

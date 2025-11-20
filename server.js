@@ -44,6 +44,10 @@ const orderSchema = new mongoose.Schema({
   total: { type: Number, required: true },
   status: { type: String, default: "Pending" },
   date: { type: Date, default: Date.now },
+  paymentStatus: { type: String, default: "Pending" }
+
+
+
 });
 
 const Order = mongoose.model("Order", orderSchema);
@@ -56,7 +60,6 @@ app.get("/", (req, res) => {
 // ✅ GET all orders
 app.get("/api/orders", async (req, res) => {
   try {
-    console.log("📦 GET /api/orders called");
     const orders = await Order.find({});
     res.json(orders);
     console.log("✅ Orders fetched:", orders);

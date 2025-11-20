@@ -1,0 +1,29 @@
+Hello [Customer Name],
+
+Thank you for placing your order at Astery’s Collection.
+
+Before we can proceed, please complete the payment using the SWIFT details below:
+
+---------------------------------------
+BANK TRANSFER (SWIFT DETAILS)
+Bank Name: Commercial Bank of Ethiopia
+Account Name: Placeholder Business Name
+Account Number: 1000 0000 0000
+SWIFT Code: CBETETAA
+Intermediary Bank: Placeholder Intermediary Bank
+Currency: USD
+Reference: [Order ID]
+---------------------------------------
+
+Once payment is complete, please send your proof of payment to:
+
+WhatsApp: +251 900 000 000  
+Email: support@example.com
+
+Verification Time: 12–24 hours.
+
+After verification, we will issue your Commercial Invoice and DHL Tracking Number.
+
+Thank you for working with us.
+
+Astery’s Collection

@@ -1,0 +1,9 @@
+Hello [Name], thank you for your order!
+
+We are preparing your payment invoice.
+
+Please complete the SWIFT payment using the details we will send shortly.
+
+After transferring, send us your proof of payment here.
+
+Verification takes 12–24 hours.
