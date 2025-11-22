@@ -98,21 +98,67 @@ app.get("/api/orders/id/:id", async (req, res) => {
 });
 
 
+const multer = require("multer");
+const path = require("path");
 
-
-// ✅ POST (Create new order)
-app.post("/api/orders", async (req, res) => {
-  console.log("📦 Incoming order:", req.body); // <-- debugging
-
-  try {
-    const newOrder = new Order(req.body);
-    const savedOrder = await newOrder.save();
-    res.status(201).json(savedOrder);
-  } catch (error) {
-    console.error("❌ Error creating order:", error);
-    res.status(400).json({ message: error.message });
+// Storage settings
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, "uploads/proofs");
+  },
+  filename: function (req, file, cb) {
+    cb(null, Date.now() + "-" + file.originalname.replace(/\s+/g, "_"));
   }
 });
+
+const upload = multer({ storage });
+
+
+app.post("/api/confirm-checkout", upload.single("paymentProof"), async (req, res) => {
+    try {
+        console.log("📦 Raw req.body:", req.body);
+
+        // ⛔ If req.body.order does NOT exist → frontend not sending correctly
+        if (!req.body.order) {
+            console.log("❌ req.body.order is missing");
+            return res.status(400).json({ error: "Order data missing" });
+        }
+
+        // ✅ Parse the JSON string into an object
+        const orderData = JSON.parse(req.body.order);
+
+        console.log("📦 Parsed order:", orderData);
+
+        // ✅ Save file URL
+        let fileUrl = null;
+        if (req.file) {
+            fileUrl = `/uploads/proofs/${req.file.filename}`;
+        }
+
+        // Create order object to save
+        orderData.paymentProof = fileUrl;
+
+        // Save to DB
+        const newOrder = new Order(orderData);
+        await newOrder.save();
+
+        res.json({ success: true, orderId: newOrder._id });
+
+    } catch (err) {
+        console.error("❌ Error creating order:", err);
+        res.status(500).json({ error: "Server error" });
+    }
+});
+
+
+
+
+
+
+
+
+
+
 
 
 // ✅ PUT (Update order status)from pending to completed to deleted
