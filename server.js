@@ -33,6 +33,7 @@ const orderSchema = new mongoose.Schema({
   },
   shipping: { type: String },
   payment: { type: String },
+  currency:{type:String},
   advance: { type: Number, default: 0 },
   items: [
     {
@@ -154,23 +155,18 @@ app.post("/api/confirm-checkout", upload.single("paymentProof"), async (req, res
 
 
 
-
-
-
-
-
-
-
 // ✅ PUT (Update order status)from pending to completed to deleted
 
 // Update order status by customer.id
 app.put("/api/orders/:id", async (req, res) => {
   try {
+    console.log("🔄 Updating order status for customer.id:", req.params.id);
+  
     const order = await Order.findOne({ "customer.id": req.params.id });
     if (!order) return res.status(404).json({ message: "Order not found" });
 
     // Logic to toggle status
-    if (order.status === "Pending") {
+    if (order.status === "Pending Payment Invoice") {
       order.status = "Completed";
     } else if (order.status === "Completed") {
       order.status = "Deleted";
@@ -184,6 +180,38 @@ app.put("/api/orders/:id", async (req, res) => {
     res.status(400).json({ message: error.message });
   }
 });
+
+
+
+app.post("/admin/login", (req, res) => {
+  const { username, password } = req.body;
+
+  // SIMPLE VERSION — replace with database later
+  const ADMIN_USER = "admin";
+  const ADMIN_PASS = "1234";
+
+  if (username === ADMIN_USER && password === ADMIN_PASS) {
+    return res.json({
+      success: true,
+      token: "ADMIN-ACCESS-GRANTED",
+    });
+   
+  }
+
+  return res.json({
+    success: false,
+    message: "Invalid admin credentials"
+  });
+});
+
+
+
+
+
+
+
+
+
 
 
 
