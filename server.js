@@ -1,6 +1,9 @@
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
+require("dotenv").config();
+const jwt = require("jsonwebtoken");
+
 
 const app = express();
 
@@ -53,13 +56,73 @@ const orderSchema = new mongoose.Schema({
 
 const Order = mongoose.model("Order", orderSchema);
 
+
+app.post("/admin/login", (req, res) => {
+  const { username, password } = req.body;
+
+  if (
+    username !== process.env.ADMIN_USERNAME ||
+    password !== process.env.ADMIN_PASSWORD
+  ) {
+    return res.status(401).json({ success: false, message: "Invalid credentials" });
+  }
+
+  const token = jwt.sign(
+    { role: "admin", username: username },
+    process.env.JWT_SECRET,
+    { expiresIn: "2h" }
+  );
+
+  res.json({
+    success: true,
+    message: "Login successful",
+    token
+  });
+});
+
+
+function verifyAdmin(req, res, next) {
+  const authHeader = req.headers.authorization;
+
+  if (!authHeader)
+    return res.status(401).json({ message: "No token provided" });
+
+  const token = authHeader.split(" ")[1]; // "Bearer <token>"
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+    if (decoded.role !== "admin")
+      return res.status(403).json({ message: "Not an admin" });
+
+    req.admin = decoded;
+    next();
+
+  } catch (err) {
+    return res.status(403).json({ message: "Invalid or expired token" });
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 // ✅ Test route
 app.get("/", (req, res) => {
   res.send("✅ API is running...");
 });
 
 // ✅ GET all orders
-app.get("/api/orders", async (req, res) => {
+app.get("/api/orders",verifyAdmin, async (req, res) => {
   try {
     const orders = await Order.find({});
     res.json(orders);
@@ -72,7 +135,7 @@ app.get("/api/orders", async (req, res) => {
 
 
 // GET all orders (optionally filter by status)
-app.get("/api/orders/status", async (req, res) => {
+app.get("/api/orders/status",verifyAdmin, async (req, res) => {
   try {
     const { status } = req.query; // e.g., /api/orders?status=Pending
     const filter = status ? { status } : {}; // if status is provided, filter by it
@@ -87,7 +150,7 @@ app.get("/api/orders/status", async (req, res) => {
 
 
 // using app
-app.get("/api/orders/id/:id", async (req, res) => {
+app.get("/api/orders/id/:id",async (req, res) => {
   try {
     const order = await Order.findOne({ "customer.id": req.params.id });
     if (!order) return res.status(404).json({ message: "Order not found" });
@@ -158,7 +221,7 @@ app.post("/api/confirm-checkout", upload.single("paymentProof"), async (req, res
 // ✅ PUT (Update order status)from pending to completed to deleted
 
 // Update order status by customer.id
-app.put("/api/orders/:id", async (req, res) => {
+app.put("/api/orders/:id",verifyAdmin , async (req, res) => {
   try {
     console.log("🔄 Updating order status for customer.id:", req.params.id);
   
@@ -166,7 +229,7 @@ app.put("/api/orders/:id", async (req, res) => {
     if (!order) return res.status(404).json({ message: "Order not found" });
 
     // Logic to toggle status
-    if (order.status === "Pending Payment Invoice") {
+    if (order.status === "Pending") {
       order.status = "Completed";
     } else if (order.status === "Completed") {
       order.status = "Deleted";
@@ -203,6 +266,8 @@ app.post("/admin/login", (req, res) => {
     message: "Invalid admin credentials"
   });
 });
+
+
 
 
 
