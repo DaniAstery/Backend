@@ -104,18 +104,6 @@ function verifyAdmin(req, res, next) {
 }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
 // ✅ Test route
 app.get("/", (req, res) => {
   res.send("✅ API is running...");
@@ -134,15 +122,21 @@ app.get("/api/orders",verifyAdmin, async (req, res) => {
 });
 
 
-// GET all orders (optionally filter by status)
-app.get("/api/orders/status",verifyAdmin, async (req, res) => {
+// GET orders by status
+app.get("/api/orders/status", verifyAdmin, async (req, res) => {
   try {
-    const { status } = req.query; // e.g., /api/orders?status=Pending
-    const filter = status ? { status } : {}; // if status is provided, filter by it
-    const orders = await Order.find(filter).sort({ date: -1 });
+    const { status } = req.query;
+
+    if (!status) {
+      return res.status(400).json({ message: "Status query is required" });
+    }
+
+    const orders = await Order.find({ status: status });
+
     res.json(orders);
-  } catch (err) {
-    console.error("❌ Error fetching orders:", err);
+    console.log(`📌 Orders with status '${status}' fetched:`, orders);
+  } catch (error) {
+    console.error("❌ Error fetching orders by status:", error);
     res.status(500).json({ message: "Server error" });
   }
 });
@@ -267,20 +261,7 @@ app.post("/admin/login", (req, res) => {
   });
 });
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 // ✅ Start server
-const PORT = 5001;
+const PORT = 5001
+;
 app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
