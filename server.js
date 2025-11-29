@@ -50,8 +50,6 @@ const orderSchema = new mongoose.Schema({
   date: { type: Date, default: Date.now },
   paymentStatus: { type: String, default: "Pending" }
 
-
-
 });
 
 const Order = mongoose.model("Order", orderSchema);
@@ -214,16 +212,25 @@ app.post("/api/confirm-checkout", upload.single("paymentProof"), async (req, res
 
 // ✅ PUT (Update order status)from pending to completed to deleted
 
-// Update order status by customer.id
-app.put("/api/orders/:id",verifyAdmin , async (req, res) => {
+app.put("/api/orders/:id", verifyAdmin, async (req, res) => {
   try {
-    console.log("🔄 Updating order status for customer.id:", req.params.id);
-  
-    const order = await Order.findOne({ "customer.id": req.params.id });
-    if (!order) return res.status(404).json({ message: "Order not found" });
+    const customerId = req.params.id.trim();
 
-    // Logic to toggle status
-    if (order.status === "Pending") {
+    console.log("Searching for customer.id:", JSON.stringify(customerId));
+
+    const order = await Order.findOne({
+      "customer.id": { $eq: customerId }
+    });
+
+    if (!order) {
+      return res.status(404).json({
+        message: "Order not found",
+        searched: customerId
+      });
+    }
+
+    // Toggle status
+    if (order.status === "Pending Payment Invoice") {
       order.status = "Completed";
     } else if (order.status === "Completed") {
       order.status = "Deleted";
@@ -231,12 +238,16 @@ app.put("/api/orders/:id",verifyAdmin , async (req, res) => {
 
     await order.save();
 
-    res.json({ message: `Order updated to ${order.status}`, order });
+    res.json({
+      message: `Order updated to ${order.status}`,
+      order
+    });
+
   } catch (error) {
-    console.error("❌ Error updating order:", error);
-    res.status(400).json({ message: error.message });
+    res.status(500).json({ message: error.message });
   }
 });
+
 
 
 
