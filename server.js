@@ -250,28 +250,6 @@ app.put("/api/orders/:id", verifyAdmin, async (req, res) => {
 
 
 
-
-app.post("/admin/login", (req, res) => {
-  const { username, password } = req.body;
-
-  // SIMPLE VERSION — replace with database later
-  const ADMIN_USER = "admin";
-  const ADMIN_PASS = "1234";
-
-  if (username === ADMIN_USER && password === ADMIN_PASS) {
-    return res.json({
-      success: true,
-      token: "ADMIN-ACCESS-GRANTED",
-    });
-   
-  }
-
-  return res.json({
-    success: false,
-    message: "Invalid admin credentials"
-  });
-});
-
 // ✅ Start server
 const PORT = 5001
 ;
