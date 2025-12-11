@@ -38,7 +38,6 @@ const orderSchema = new mongoose.Schema({
   shipping: { type: String },
   payment: { type: String },
   currency:{type:String},
-  advance: { type: Number, default: 0 },
   items: [
     {
       name: String,
