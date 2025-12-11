@@ -2,13 +2,11 @@ const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
 const dotenv = require("dotenv");
+dotenv.config();
 const jwt = require("jsonwebtoken");
 
-
-dotenv.config();
-
-
 const app = express();
+const { sendVerificationCode, verifyCode } = require("./services/emailService");
 
 // ✅ Middleware
 app.use(cors());
@@ -106,12 +104,51 @@ function verifyAdmin(req, res, next) {
 
 
 
-
-
 // ✅ Test route
 app.get("/", (req, res) => {
   res.send("✅ API is running...");
 });
+
+
+
+// Send email code
+app.post("/api/send-code", async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email)
+      return res.status(400).json({ error: "Email required" });
+
+    await sendVerificationCode(email);
+
+    res.json({ success: true, message: "Verification code sent" });
+  } catch (err) {
+    console.error("Email error:", err);
+    res.status(500).json({ error: "Failed to send verification code" });
+  }
+});
+
+// Verify code
+app.post("/api/verify-code", (req, res) => {
+  const { email, code } = req.body;
+
+  if (verifyCode(email, code)) {
+    return res.json({ success: true, message: "Verified!" });
+  }
+
+  res.status(400).json({ success: false, message: "Invalid or expired code" });
+});
+
+
+
+
+
+
+
+
+
+
+
 
 
 
