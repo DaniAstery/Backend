@@ -1,8 +1,11 @@
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
-require("dotenv").config();
+const dotenv = require("dotenv");
 const jwt = require("jsonwebtoken");
+
+
+dotenv.config();
 
 
 const app = express();
@@ -102,10 +105,15 @@ function verifyAdmin(req, res, next) {
 }
 
 
+
+
+
 // ✅ Test route
 app.get("/", (req, res) => {
   res.send("✅ API is running...");
 });
+
+
 
 // ✅ GET all orders
 app.get("/api/orders",verifyAdmin, async (req, res) => {
@@ -118,7 +126,6 @@ app.get("/api/orders",verifyAdmin, async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 });
-
 
 // GET orders by status
 app.get("/api/orders/status", verifyAdmin, async (req, res) => {
@@ -138,7 +145,6 @@ app.get("/api/orders/status", verifyAdmin, async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 });
-
 
 
 // using app
@@ -251,6 +257,5 @@ app.put("/api/orders/:id", verifyAdmin, async (req, res) => {
 
 
 // ✅ Start server
-const PORT = 5001
-;
+const PORT = 5001;
 app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
