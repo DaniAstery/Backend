@@ -10,6 +10,7 @@ const transporter = nodemailer.createTransport({
   }
 });
 
+
 // Send OTP
 async function sendVerificationCode(email) {
   const code = Math.floor(100000 + Math.random() * 900000);

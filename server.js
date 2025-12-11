@@ -114,6 +114,7 @@ app.get("/", (req, res) => {
 // Send email code
 app.post("/api/send-code", async (req, res) => {
   try {
+    console.log("send-code request body:", req.body);
     const { email } = req.body;
 
     if (!email)
