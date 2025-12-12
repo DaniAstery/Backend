@@ -4,6 +4,7 @@ const cors = require("cors");
 const dotenv = require("dotenv");
 dotenv.config();
 const jwt = require("jsonwebtoken");
+const BankAccount = require("./models/BankAccount");
 
 const app = express();
 const { sendVerificationCode, verifyCode } = require("./services/emailService");
@@ -114,12 +115,12 @@ app.get("/", (req, res) => {
 app.post("/api/send-code", async (req, res) => {
   try {
     console.log("send-code request body:", req.body);
-    const { email } = req.body;
+    const { email,currency } = req.body;
 
     if (!email)
       return res.status(400).json({ error: "Email required" });
 
-    await sendVerificationCode(email);
+    await sendVerificationCode(email,currency);
 
     res.json({ success: true, message: "Verification code sent" });
   } catch (err) {
@@ -133,22 +134,11 @@ app.post("/api/verify-code", (req, res) => {
   const { email, code } = req.body;
 
   if (verifyCode(email, code)) {
-    return res.json({ success: true, message: "Verified!" });
+    return res.json({ success: true, message: "Email Verified!" });
   }
 
   res.status(400).json({ success: false, message: "Invalid or expired code" });
 });
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -290,6 +280,42 @@ app.put("/api/orders/:id", verifyAdmin, async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 });
+
+
+app.post("/get-account", async (req, res) => {
+  try {
+    const { paymentType } = req.body;
+
+    if (!paymentType) {
+      return res.status(400).json({ message: "Payment type required" });
+    }
+
+    const account = await BankAccount.findOne({ paymentType, isActive: true });
+
+    if (!account) {
+      return res.status(404).json({ message: "No account found" });
+    }
+
+    res.json({ success: true, account });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
