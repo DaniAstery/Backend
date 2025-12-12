@@ -16,6 +16,7 @@ const transporter = nodemailer.createTransport({
 });
 
 async function generatePaymentPDF(email, currency) {
+  console.log("Generating PDF for:", email, currency);
   try {
     // ⭐ Fetch Bank Account From DB
     const account = await BankAccount.findOne({
