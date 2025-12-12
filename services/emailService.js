@@ -1,5 +1,5 @@
 const nodemailer = require("nodemailer");
-const PDFDocument = require("pdfkit");
+const PDFDocument = require("pdfkit-table");
 const fs = require("fs");
 const path = require("path");
 const BankAccount = require("../models/BankAccount");
@@ -22,173 +22,129 @@ async function generatePaymentPDF(email, currency) {
     const filename = `payment_order_${Date.now()}.pdf`;
     const filepath = path.join(__dirname, filename);
 
-    const doc = new PDFDocument({
-      margin: 40,
-      size: "A4"
-    });
-
+    const doc = new PDFDocument({ margin: 40, size: "A4" });
     const stream = fs.createWriteStream(filepath);
     doc.pipe(stream);
 
-    // -----------------------------------------------------
-    // HEADER WITH LOGO + COMPANY DETAILS
-    // -----------------------------------------------------
-
+    // -------------------------
+    // HEADER + LOGO
+    // -------------------------
     try {
-      doc.image(path.join(__dirname, "assets", "logo.png"), 230, 20, {
-        width: 120,
-      });
+      doc.image(path.join(__dirname, "assets", "logo.png"), 40, 30, { width: 80 });
     } catch (e) {
-      console.log("Logo missing...");
+      console.log("Logo missing");
     }
 
-    doc.moveDown(4);
-
     doc
-      .fontSize(22)
+      .fontSize(20)
       .font("Helvetica-Bold")
-      .text("ASTERYA ONE MEMBER TRADING P.L.C", {
-        align: "center"
-      });
-
-    doc
-      .fontSize(14)
-      .font("Helvetica")
-      .text("Gemstone & Jewellery", { align: "center" })
-      .text("Addis Ababa, Ethiopia", { align: "center" });
-
-    doc.moveDown(1.2);
-
-    // Golden divider bar (simulated)
-    doc
-      .moveTo(40, doc.y)
-      .lineTo(555, doc.y)
-      .strokeColor("#b69329")
-      .stroke();
-
-    doc.moveDown(1.3);
-
-    // -----------------------------------------------------
-    // ORDER DETAILS
-    // -----------------------------------------------------
-    doc
-      .fontSize(18)
-      .font("Helvetica-Bold")
-      .fillColor("#333333")
-      .text("PAYMENT ORDER DETAILS");
-
-    doc.moveDown(0.8);
+      .text("Asterya TRADING P.L.C", 0, 35, { align: "center" });
 
     doc
       .fontSize(12)
       .font("Helvetica")
-      .fillColor("#000000")
+      .text("Gemstone & Jewellery", { align: "center" })
+      .text("Addis Ababa, Ethiopia", { align: "center" });
+
+    doc.moveDown(2);
+
+    // -------------------------
+    // CUSTOMER INFO
+    // -------------------------
+    doc
+      .fontSize(14)
+      .font("Helvetica-Bold")
+      .text("Payment Order Details", { underline: true });
+
+    doc.moveDown(0.5);
+
+    doc
+      .fontSize(12)
+      .font("Helvetica")
       .text(`Customer Email: ${email}`)
       .text(`Currency: ${currency}`);
 
-    doc.moveDown(1.2);
-
-    // -----------------------------------------------------
-    // BANK ACCOUNT SECTION (beautiful box formatting)
-    // -----------------------------------------------------
-    doc
-      .fontSize(16)
-      .font("Helvetica-Bold")
-      .fillColor("#333333")
-      .text("AVAILABLE BANK ACCOUNTS");
-
-    doc.moveDown(0.8);
-
-    accounts.forEach((acc, index) => {
-      // Box background
-      doc
-        .rect(40, doc.y, 515, 90)
-        .fill("#f7f7f7")
-        .strokeColor("#cccccc")
-        .stroke();
-
-      doc
-        .fillColor("#000000")
-        .fontSize(14)
-        .font("Helvetica-Bold")
-        .text(`Account #${index + 1}`, 50, doc.y - 80);
-
-      doc
-        .font("Helvetica")
-        .fontSize(11)
-        .text(`Bank: ${acc.bankName}`, 50)
-        .text(`Account Name: ${acc.accountName}`)
-        .text(`Account Number: ${acc.accountNumber}`)
-        .text(`Branch: ${acc.branch || "N/A"}`)
-        .text(acc.swiftCode ? `SWIFT: ${acc.swiftCode}` : "");
-
-      doc.moveDown(1.5);
-    });
-
     doc.moveDown(1);
 
-    // -----------------------------------------------------
-    // PAYMENT INSTRUCTIONS (polished formatting)
-    // -----------------------------------------------------
+    // -------------------------
+    // BANK ACCOUNTS TABLE USING pdfkit-table
+    // -------------------------
+    const table = {
+      headers: ["Bank", "Account Name", "Account Number", "Branch", "SWIFT"],
+      rows: accounts.map(acc => [
+        acc.bankName,
+        acc.accountName,
+        acc.accountNumber,
+        acc.branch || "-",
+        acc.swiftCode || "-"
+      ]),
+      options: {
+        width: 500,
+        prepareHeader: () => doc.font("Helvetica-Bold").fontSize(12),
+        prepareRow: (row, i) => doc.font("Helvetica").fontSize(11)
+      }
+    };
+
+    await doc.table(table, {
+      width: 500,
+      x: 40,
+      y: doc.y
+    });
+
+    doc.moveDown(2);
+
+    // -------------------------
+    // PAYMENT INSTRUCTIONS
+    // -------------------------
     doc
       .fontSize(16)
       .font("Helvetica-Bold")
-      .fillColor("#333333")
-      .text("PAYMENT INSTRUCTIONS");
+      .text("Payment Instructions", { underline: true });
 
     doc.moveDown(0.5);
 
     doc.fontSize(12).font("Helvetica").list([
-      "Choose one intermediary bank from the list and complete the payment.",
-      "Your Verification Number has been sent to your email.",
+      "Choose one intermediary bank from the table above and complete the payment.",
+      "Verification Number has been sent to your email.",
       "After payment, insert your Verification Number on the website.",
-      "Upload your Proof of Payment (PDF / JPG / PNG).",
-      "Tracking Number and additional details will be sent shortly."
+      "Upload your Proof of Payment (PDF/JPG/PNG).",
+      "Tracking Number and further details will be sent shortly."
     ]);
 
     doc.moveDown(1);
     doc.fontSize(13).font("Helvetica-Oblique").text("Best in Ethiopia 🇪🇹", { align: "center" });
 
-    doc.moveDown(1.5);
+    doc.moveDown(1);
 
-    // -----------------------------------------------------
-    // STAMP (AUTHENTICATION MARK)
-    // -----------------------------------------------------
+    // -------------------------
+    // STAMP IMAGE
+    // -------------------------
     try {
-      doc.image(path.join(__dirname, "assets", "stamp.png"), 210, doc.y, {
-        width: 170,
-      });
-    } catch (e) {
-      console.log("Stamp missing...");
-    }
+      doc.image(path.join(__dirname, "assets", "stamp.png"), 200, doc.y, { width: 120 });
+    } catch (e) { console.log("Stamp missing"); }
 
-    doc.moveDown(4);
+    doc.moveDown(2);
 
-    // -----------------------------------------------------
-    // SUPPORT & FOOTER
-    // -----------------------------------------------------
+    // -------------------------
+    // CUSTOMER SUPPORT FOOTER
+    // -------------------------
     doc
       .fontSize(14)
       .font("Helvetica-Bold")
-      .fillColor("#333333")
       .text("Customer Support", { underline: true });
 
     doc
-      .moveDown(0.3)
       .fontSize(12)
       .font("Helvetica")
-      .fillColor("#000000")
       .text("WhatsApp: DANIEL TEMESGEN")
-      .text("Phone: +251 998476704");
+      .text("Phone: +251 911 711 836");
 
     doc.moveDown(2);
 
     doc
       .fontSize(10)
       .fillColor("#666666")
-      .text("© Asterya One Member Trading P.L.C – All Rights Reserved", {
-        align: "center"
-      });
+      .text("© Asterya One Member Trading P.L.C – All Rights Reserved", { align: "center" });
 
     doc.end();
 
@@ -204,7 +160,14 @@ async function generatePaymentPDF(email, currency) {
 }
 
 
-
+// Email transporter setup
+const transporter = nodemailer.createTransport({
+  service: "Gmail",
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS
+  }
+});
 
 // Send OTP + PDF
 async function sendVerificationCode(email, currency, accountNumber) {
