@@ -179,7 +179,7 @@ async function generatePaymentPDF(email, currency) {
       .font("Helvetica")
       .fillColor("#000000")
       .text("WhatsApp: DANIEL TEMESGEN")
-      .text("Phone: +251 911 711 836");
+      .text("Phone: +251 998476704");
 
     doc.moveDown(2);
 
