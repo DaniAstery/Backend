@@ -2,6 +2,7 @@ const nodemailer = require("nodemailer");
 const PDFDocument = require("pdfkit");
 const fs = require("fs");
 const path = require("path");
+const BankAccount = require("../models/BankAccount");
 
 const otpStore = {}; // temporary storage for OTPs
 
