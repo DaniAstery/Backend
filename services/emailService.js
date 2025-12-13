@@ -4,11 +4,11 @@ const fs = require("fs");
 const path = require("path");
 const BankAccount = require("../models/BankAccount");
 
-const otpStore = {}; // temporary OTP storage
+const otpStore = {};
 
-// -------------------------
-// EMAIL TRANSPORTER
-// -------------------------
+// ------------------------
+// Email transporter
+// ------------------------
 const transporter = nodemailer.createTransport({
   service: "Gmail",
   auth: {
@@ -17,9 +17,9 @@ const transporter = nodemailer.createTransport({
   }
 });
 
-// -------------------------
+// ------------------------
 // SEND OTP + PDF
-// -------------------------
+// ------------------------
 async function sendVerificationCode(email, currency, cart) {
   const code = Math.floor(100000 + Math.random() * 900000);
   otpStore[email] = code;
@@ -42,9 +42,9 @@ async function sendVerificationCode(email, currency, cart) {
   return code;
 }
 
-// -------------------------
+// ------------------------
 // VERIFY OTP
-// -------------------------
+// ------------------------
 function verifyCode(email, code) {
   if (otpStore[email] && otpStore[email] == code) {
     delete otpStore[email];
@@ -53,18 +53,22 @@ function verifyCode(email, code) {
   return false;
 }
 
-// -------------------------
-// GENERATE PAYMENT PDF
-// -------------------------
+module.exports = {
+  sendVerificationCode,
+  verifyCode
+};
+
+// ========================
+// PDF GENERATION
+// ========================
 async function generatePaymentPDF(email, currency, cart) {
 
-  // ✅ SAFELY PARSE CART
+  // ✅ SAFELY parse cart
   const parsedCart = Array.isArray(cart)
     ? cart
     : JSON.parse(cart || "[]");
 
-  console.log("Generating PDF for:", email, currency);
-  console.log("Cart items:", parsedCart);
+  console.log("📦 Cart items:", parsedCart);
 
   const accounts = await BankAccount.find({
     currency,
@@ -72,7 +76,7 @@ async function generatePaymentPDF(email, currency, cart) {
   });
 
   if (!accounts.length) {
-    throw new Error("No active bank accounts found.");
+    throw new Error("No active bank accounts found");
   }
 
   const filename = `payment_order_${Date.now()}.pdf`;
@@ -85,48 +89,33 @@ async function generatePaymentPDF(email, currency, cart) {
   // -------------------------
   // HEADER
   // -------------------------
-  try {
-    doc.image(path.join(__dirname, "assets", "logo.png"), 40, 30, { width: 80 });
-  } catch {}
+  doc.fontSize(20).font("Helvetica-Bold")
+     .text("Asterya TRADING P.L.C", { align: "center" });
 
-  doc
-    .fontSize(20)
-    .font("Helvetica-Bold")
-    .text("Asterya TRADING P.L.C", { align: "center" });
-
-  doc
-    .fontSize(12)
-    .font("Helvetica")
-    .text("Gemstone & Jewellery", { align: "center" })
-    .text("Addis Ababa, Ethiopia", { align: "center" });
+  doc.fontSize(12).font("Helvetica")
+     .text("Gemstone & Jewellery", { align: "center" })
+     .text("Addis Ababa, Ethiopia", { align: "center" });
 
   doc.moveDown(2);
 
   // -------------------------
   // CUSTOMER INFO
   // -------------------------
-  doc
-    .fontSize(14)
-    .font("Helvetica-Bold")
-    .text("Payment Order Details", { underline: true });
+  doc.fontSize(14).font("Helvetica-Bold")
+     .text("Payment Order Details", { underline: true });
 
   doc.moveDown(0.5);
-
-  doc
-    .fontSize(12)
-    .font("Helvetica")
-    .text(`Customer Email: ${email}`)
-    .text(`Currency: ${currency}`);
+  doc.fontSize(12).font("Helvetica")
+     .text(`Customer Email: ${email}`)
+     .text(`Currency: ${currency}`);
 
   doc.moveDown(1);
 
   // -------------------------
-  // ORDER DETAILS TABLE ✅
+  // ORDER DETAILS
   // -------------------------
-  doc
-    .fontSize(14)
-    .font("Helvetica-Bold")
-    .text("Order Details", { underline: true });
+  doc.fontSize(14).font("Helvetica-Bold")
+     .text("Order Details", { underline: true });
 
   doc.moveDown(0.5);
 
@@ -145,52 +134,36 @@ async function generatePaymentPDF(email, currency, cart) {
 
     await doc.table(orderTable, {
       width: 500,
-      prepareHeader: () => doc.font("Helvetica-Bold").fontSize(12),
-      prepareRow: () => doc.font("Helvetica").fontSize(11)
+      prepareHeader: () => doc.font("Helvetica-Bold"),
+      prepareRow: () => doc.font("Helvetica")
     });
   }
 
   doc.moveDown(2);
 
   // -------------------------
-  // BANK ACCOUNTS TABLE
+  // BANK DETAILS
   // -------------------------
   const bankTable = {
-    headers: ["Bank", "Account Name", "Account Number", "Branch", "SWIFT"],
+    headers: ["Bank", "Account Name", "Account Number", "SWIFT"],
     rows: accounts.map(acc => [
       acc.bankName,
       acc.accountName,
       acc.accountNumber,
-      acc.branch || "-",
       acc.swiftCode || "-"
     ])
   };
 
   await doc.table(bankTable, {
     width: 500,
-    prepareHeader: () => doc.font("Helvetica-Bold").fontSize(12),
-    prepareRow: () => doc.font("Helvetica").fontSize(11)
+    prepareHeader: () => doc.font("Helvetica-Bold"),
+    prepareRow: () => doc.font("Helvetica")
   });
 
   doc.moveDown(2);
 
-  // -------------------------
-  // PAYMENT INSTRUCTIONS
-  // -------------------------
-  doc
-    .fontSize(16)
-    .font("Helvetica-Bold")
-    .text("Payment Instructions", { underline: true });
-
-  doc.moveDown(0.5);
-
-  doc.fontSize(12).list([
-    "Choose one intermediary bank from the table above.",
-    "Verification code was sent to your email.",
-    "Submit verification code on the website.",
-    "Upload payment proof.",
-    "Tracking details will be sent shortly."
-  ]);
+  doc.fontSize(10)
+     .text("© Asterya One Member Trading P.L.C", { align: "center" });
 
   doc.end();
 
@@ -199,8 +172,3 @@ async function generatePaymentPDF(email, currency, cart) {
     stream.on("error", reject);
   });
 }
-
-module.exports = {
-  sendVerificationCode,
-  verifyCode
-};
