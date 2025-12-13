@@ -115,12 +115,12 @@ app.get("/", (req, res) => {
 app.post("/api/send-code", async (req, res) => {
   try {
     console.log("send-code request body:", req.body);
-    const { email,currency } = req.body;
+    const {email,currency,cart} = req.body;
 
     if (!email)
       return res.status(400).json({ error: "Email required" });
 
-    await sendVerificationCode(email,currency);
+    await sendVerificationCode(email,currency,cart);
 
     res.json({ success: true, message: "Verification code sent" });
   } catch (err) {
