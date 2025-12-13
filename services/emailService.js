@@ -55,6 +55,9 @@ module.exports = {
 
 
 async function generatePaymentPDF(email, currency, cart) {
+
+  // Parse cart if it's a string its a string because it was set from local storage in the frontend
+  const parsedCart = typeof cart === "string" ? JSON.parse(cart) : cart
   console.log("Generating PDF for:", email, currency, cart);
 
   try {
