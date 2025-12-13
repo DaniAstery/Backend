@@ -24,6 +24,8 @@ async function sendVerificationCode(email, currency, cart) {
   const code = Math.floor(100000 + Math.random() * 900000);
   otpStore[email] = code;
 
+  console.log(cart);
+
   const pdfPath = await generatePaymentPDF(email, currency, cart);
 
   await transporter.sendMail({
