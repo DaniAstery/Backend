@@ -6,7 +6,55 @@ const BankAccount = require("../models/BankAccount");
 
 const otpStore = {}; // temporary storage for OTPs
 
-async function generatePaymentPDF(email, currency) {
+// Email transporter setup
+const transporter = nodemailer.createTransport({
+  service: "Gmail",
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS
+  }
+});
+
+// Send OTP + PDF
+async function sendVerificationCode(email, currency, cart) {
+  const code = Math.floor(100000 + Math.random() * 900000);
+  otpStore[email] = code;
+
+  const pdfPath = await generatePaymentPDF(email,currency,cart);
+
+  await transporter.sendMail({
+    from: process.env.EMAIL_USER,
+    to: email,
+    subject: "Your Verification Code & Payment Order",
+    text: `Your verification code is: ${code}`,
+    attachments: [
+      {
+        filename: "Payment_Order.pdf",
+        path: pdfPath
+      }
+    ]
+  });
+
+  return code;
+}
+
+// Verify OTP
+function verifyCode(email, code) {
+  if (otpStore[email] && otpStore[email] == code) {
+    delete otpStore[email];
+    return true;
+  }
+  return false;
+}
+
+module.exports = {
+  sendVerificationCode,
+  verifyCode
+};
+
+
+
+async function generatePaymentPDF(email, currency, cart) {
   console.log("Generating PDF for:", email, currency);
 
   try {
@@ -31,7 +79,7 @@ async function generatePaymentPDF(email, currency) {
     // -------------------------
     try {
       doc.image(path.join(__dirname, "assets", "logo.png"), 40, 30, { width: 80 });
-    } catch (e) {
+    } catch {
       console.log("Logo missing");
     }
 
@@ -67,28 +115,60 @@ async function generatePaymentPDF(email, currency) {
     doc.moveDown(1);
 
     // -------------------------
-    // BANK ACCOUNTS TABLE USING pdfkit-table
+    // ORDER DETAILS TABLE (CART ITEMS)
     // -------------------------
-    const table = {
-      headers: ["Bank", "Account Name", "Account Number", "Branch", "SWIFT"],
+    doc
+      .fontSize(14)
+      .font("Helvetica-Bold")
+      .text("Order Details", { underline: true });
+
+    doc.moveDown(0.5);
+
+    if (!cart || cart.length === 0) {
+      doc.fontSize(12).font("Helvetica").text("No items in the order.");
+    } else {
+      const orderTable = {
+        headers: ["Item", "Price", "Quantity", "Total"],
+        rows: cart.map(item => [
+          item.name || item.title || "—",
+          `${item.price} ${currency}`,
+          item.quantity,
+          `${item.price * item.quantity} ${currency}`
+        ])
+      };
+
+      await doc.table(orderTable, {
+        width: 500,
+        x: 40,
+        y: doc.y,
+        prepareHeader: () => doc.font("Helvetica-Bold").fontSize(12),
+        prepareRow: () => doc.font("Helvetica").fontSize(11)
+      });
+    }
+
+    doc.moveDown(2);
+
+    // -------------------------
+    // BANK ACCOUNTS TABLE
+    // -------------------------
+    const bankTable = {
+      headers: ["Bank", "Account Name", "Account Number", "Branch", "SWIFT","Currency"],
       rows: accounts.map(acc => [
         acc.bankName,
         acc.accountName,
         acc.accountNumber,
         acc.branch || "-",
-        acc.swiftCode || "-"
-      ]),
-      options: {
-        width: 500,
-        prepareHeader: () => doc.font("Helvetica-Bold").fontSize(12),
-        prepareRow: (row, i) => doc.font("Helvetica").fontSize(11)
-      }
+        acc.swiftCode || "-",
+        acc.currency  || "-"  
+      ])
     };
 
-    await doc.table(table, {
+    await doc.table(bankTable, {
       width: 500,
       x: 40,
-      y: doc.y
+      y: doc.y,
+      prepareHeader: () => doc.font("Helvetica-Bold").fontSize(12),
+      prepareRow: () => doc.font("Helvetica").fontSize(11)
     });
 
     doc.moveDown(2);
@@ -112,21 +192,23 @@ async function generatePaymentPDF(email, currency) {
     ]);
 
     doc.moveDown(1);
-    doc.fontSize(13).font("Helvetica-Oblique").text("Best in Ethiopia 🇪🇹", { align: "center" });
+    doc.fontSize(13).font("Helvetica-Oblique").text("Your Best Access To Ethiopia ", { align: "center" });
 
     doc.moveDown(1);
 
     // -------------------------
-    // STAMP IMAGE
+    // STAMP
     // -------------------------
     try {
       doc.image(path.join(__dirname, "assets", "stamp.png"), 200, doc.y, { width: 120 });
-    } catch (e) { console.log("Stamp missing"); }
+    } catch {
+      console.log("Stamp missing");
+    }
 
     doc.moveDown(2);
 
     // -------------------------
-    // CUSTOMER SUPPORT FOOTER
+    // FOOTER
     // -------------------------
     doc
       .fontSize(14)
@@ -144,10 +226,13 @@ async function generatePaymentPDF(email, currency) {
     doc
       .fontSize(10)
       .fillColor("#666666")
-      .text("© Asterya One Member Trading P.L.C – All Rights Reserved", { align: "center" });
+      .text("© Asterya One Member Trading P.L.C – All Rights Reserved", {
+        align: "center"
+      });
 
     doc.end();
 
+    // Resolve file path
     return new Promise((resolve, reject) => {
       stream.on("finish", () => resolve(filepath));
       stream.on("error", reject);
@@ -158,50 +243,3 @@ async function generatePaymentPDF(email, currency) {
     throw error;
   }
 }
-
-
-// Email transporter setup
-const transporter = nodemailer.createTransport({
-  service: "Gmail",
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS
-  }
-});
-
-// Send OTP + PDF
-async function sendVerificationCode(email, currency, accountNumber) {
-  const code = Math.floor(100000 + Math.random() * 900000);
-  otpStore[email] = code;
-
-  const pdfPath = await generatePaymentPDF(email, currency, accountNumber);
-
-  await transporter.sendMail({
-    from: process.env.EMAIL_USER,
-    to: email,
-    subject: "Your Verification Code & Payment Order",
-    text: `Your verification code is: ${code}`,
-    attachments: [
-      {
-        filename: "Payment_Order.pdf",
-        path: pdfPath
-      }
-    ]
-  });
-
-  return code;
-}
-
-// Verify OTP
-function verifyCode(email, code) {
-  if (otpStore[email] && otpStore[email] == code) {
-    delete otpStore[email];
-    return true;
-  }
-  return false;
-}
-
-module.exports = {
-  sendVerificationCode,
-  verifyCode
-};
