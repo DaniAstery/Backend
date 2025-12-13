@@ -55,7 +55,7 @@ module.exports = {
 
 
 async function generatePaymentPDF(email, currency, cart) {
-  console.log("Generating PDF for:", email, currency,cart);
+  console.log("Generating PDF for:", email, currency, cart);
 
   try {
     const accounts = await BankAccount.find({
