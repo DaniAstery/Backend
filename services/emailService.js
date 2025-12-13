@@ -57,8 +57,8 @@ module.exports = {
 async function generatePaymentPDF(email, currency, cart) {
 
   // Parse cart if it's a string its a string because it was set from local storage in the frontend
-  const parsedCart = typeof cart === "string" ? JSON.parse(cart) : cart
-  console.log("Generating PDF for:", email, currency, cart);
+  const parsedCart= typeof cart === "string" ? JSON.parse(cart) : cart
+  console.log("Generating PDF for:", email, currency, parsedCart);
 
   try {
     const accounts = await BankAccount.find({
@@ -127,12 +127,12 @@ async function generatePaymentPDF(email, currency, cart) {
 
     doc.moveDown(0.5);
 
-    if (!cart || cart.length === 0) {
+    if (!parsedCart || parsedCart.length === 0) {
       doc.fontSize(12).font("Helvetica").text("No items in the order.");
     } else {
       const orderTable = {
         headers: ["Item", "Price", "Quantity", "Total"],
-        rows: cart.map(item => [
+        rows: parsedCart.map(item => [
           item.name || item.title || "—",
           `${item.price} ${currency}`,
           item.quantity,
