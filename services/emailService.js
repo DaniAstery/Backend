@@ -65,7 +65,6 @@ module.exports = {
 // ========================
 async function generatePaymentPDF(email, currency, cart) {
 
-  // ✅ SAFELY parse cart
   const parsedCart = Array.isArray(cart)
     ? cart
     : JSON.parse(cart || "[]");
@@ -88,84 +87,198 @@ async function generatePaymentPDF(email, currency, cart) {
   const stream = fs.createWriteStream(filepath);
   doc.pipe(stream);
 
-  // -------------------------
-  // HEADER
-  // -------------------------
-  doc.fontSize(20).font("Helvetica-Bold")
-     .text("Asterya TRADING P.L.C", { align: "center" });
+  /* =======================
+     HEADER + LOGO
+  ======================= */
+  try {
+    doc.image(path.join(__dirname, "assets", "logo.png"), 40, 30, { width: 80 });
+  } catch {}
 
-  doc.fontSize(12).font("Helvetica")
-     .text("Gemstone & Jewellery", { align: "center" })
-     .text("Addis Ababa, Ethiopia", { align: "center" });
+  doc
+    .font("Helvetica-Bold")
+    .fontSize(20)
+    .text("Asterya TRADING P.L.C", 0, 35, { align: "center" });
+
+  doc
+    .font("Helvetica")
+    .fontSize(12)
+    .text("Gemstone & Jewellery", { align: "center" })
+    .text("Addis Ababa, Ethiopia", { align: "center" });
 
   doc.moveDown(2);
 
-  // -------------------------
-  // CUSTOMER INFO
-  // -------------------------
-  doc.fontSize(14).font("Helvetica-Bold")
-     .text("Payment Order Details", { underline: true });
+  /* =======================
+     PAYMENT ORDER DETAILS
+  ======================= */
+  doc
+    .font("Helvetica-Bold")
+    .fontSize(14)
+    .text("Payment Order Details", { underline: true });
 
-  doc.moveDown(0.5);
-  doc.fontSize(12).font("Helvetica")
-     .text(`Customer Email: ${email}`)
-     .text(`Currency: ${currency}`);
+  doc.moveDown(0.7);
 
-  doc.moveDown(1);
+  doc
+    .font("Helvetica")
+    .fontSize(12)
+    .text(`Customer Email: ${email}`)
+    .text(`Currency: ${currency}`);
 
-  // -------------------------
-  // ORDER DETAILS
-  // -------------------------
-  doc.fontSize(14).font("Helvetica-Bold")
-     .text("Order Details", { underline: true });
+  doc.moveDown(1.5);
 
-  doc.moveDown(0.5);
+  /* =======================
+     ORDER DETAILS (ITEMS)
+  ======================= */
+  doc
+    .font("Helvetica-Bold")
+    .fontSize(14)
+    .text("Order Details", { underline: true });
+
+  doc.moveDown(0.8);
 
   if (parsedCart.length === 0) {
-    doc.text("No items in the order.");
+    doc.font("Helvetica").fontSize(12).text("No items in the order.");
   } else {
+
+    const totalPrice = parsedCart.reduce(
+      (sum, item) => sum + item.price * item.quantity,
+      0
+    );
+
     const orderTable = {
       headers: ["Item", "Price", "Qty", "Total"],
-      rows: parsedCart.map(item => [
-        item.name,
-        `${item.price} ${currency}`,
-        item.quantity,
-        `${(item.price * item.quantity).toFixed(2)} ${currency}`
-      ])
+      rows: [
+        ...parsedCart.map(item => [
+          item.name || "—",
+          `${item.price} ${currency}`,
+          item.quantity,
+          `${(item.price * item.quantity).toFixed(2)} ${currency}`
+        ]),
+        ["TOTAL", "", "", `${totalPrice.toFixed(2)} ${currency}`]
+      ]
     };
 
     await doc.table(orderTable, {
       width: 500,
-      prepareHeader: () => doc.font("Helvetica-Bold"),
-      prepareRow: () => doc.font("Helvetica")
+      x: 40,
+      y: doc.y,
+
+      prepareHeader: () =>
+        doc.font("Helvetica-Bold").fontSize(12).fillColor("#007BFF"),
+
+      prepareRow: (row, i) => {
+        if (i === parsedCart.length) {
+          doc.font("Helvetica-Bold").fontSize(12).fillColor("#007BFF");
+        } else {
+          doc.font("Helvetica").fontSize(11).fillColor("#000000");
+        }
+      },
+
+      rowEvenColor: "#F5F7FA",
+      rowOddColor: "#FFFFFF",
+
+      rowBackground: (row, i) =>
+        i === parsedCart.length ? "#E6F0FF" : null,
+
+      padding: 6,
+      borderWidth: 1
     });
   }
 
   doc.moveDown(2);
 
-  // -------------------------
-  // BANK DETAILS
-  // -------------------------
+  /* =======================
+     BANK DETAILS TABLE
+  ======================= */
   const bankTable = {
-    headers: ["Bank", "Account Name", "Account Number", "SWIFT"],
+    headers: ["Bank", "Account Name", "Account Number", "Branch", "SWIFT"],
     rows: accounts.map(acc => [
       acc.bankName,
       acc.accountName,
       acc.accountNumber,
+      acc.branch || "-",
       acc.swiftCode || "-"
     ])
   };
 
   await doc.table(bankTable, {
     width: 500,
-    prepareHeader: () => doc.font("Helvetica-Bold"),
-    prepareRow: () => doc.font("Helvetica")
+    x: 40,
+    y: doc.y,
+
+    prepareHeader: () =>
+      doc.font("Helvetica-Bold").fontSize(12).fillColor("#FF5722"),
+
+    prepareRow: () =>
+      doc.font("Helvetica").fontSize(11).fillColor("#000000"),
+
+    rowEvenColor: "#FAFAFA",
+    rowOddColor: "#FFFFFF",
+    padding: 6,
+    borderWidth: 1
   });
 
   doc.moveDown(2);
 
-  doc.fontSize(10)
-     .text("© Asterya One Member Trading P.L.C", { align: "center" });
+  /* =======================
+     PAYMENT INSTRUCTIONS
+  ======================= */
+  doc
+    .font("Helvetica-Bold")
+    .fontSize(14)
+    .text("Payment Instructions", { underline: true });
+
+  doc.moveDown(0.6);
+
+  doc
+    .font("Helvetica")
+    .fontSize(12)
+    .list([
+      "Choose one bank from the table above and complete the payment.",
+      "A verification number has been sent to your email.",
+      "Enter the verification number on the website.",
+      "Upload your proof of payment (PDF/JPG/PNG).",
+      "Tracking details will be sent after confirmation."
+    ]);
+
+  doc.moveDown(1.5);
+
+  /* =======================
+     STAMP
+  ======================= */
+  try {
+    doc.image(
+      path.join(__dirname, "assets", "stamp.png"),
+      200,
+      doc.y,
+      { width: 120 }
+    );
+  } catch {}
+
+  doc.moveDown(2);
+
+  /* =======================
+     FOOTER
+  ======================= */
+  doc
+    .font("Helvetica-Bold")
+    .fontSize(14)
+    .text("Customer Support", { underline: true });
+
+  doc
+    .font("Helvetica")
+    .fontSize(12)
+    .text("WhatsApp: Daniel Temesgen")
+    .text("Phone: +251 998 476 704");
+
+  doc.moveDown(2);
+
+  doc
+    .fontSize(10)
+    .fillColor("#666666")
+    .text(
+      "© Asterya One Member Trading P.L.C – All Rights Reserved",
+      { align: "center" }
+    );
 
   doc.end();
 
