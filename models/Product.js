@@ -18,7 +18,8 @@ const productSchema = new mongoose.Schema({
 
   stock: {
     type: Number,
-    default: 1 // 1 = in stock, 0 = out of stock
+    default: 1 
+    // 1 = in stock, 0 = out of stock
   },
 
   isActive: {
