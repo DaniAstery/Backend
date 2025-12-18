@@ -5,6 +5,7 @@ const dotenv = require("dotenv");
 dotenv.config();
 const jwt = require("jsonwebtoken");
 const BankAccount = require("./models/BankAccount");
+const ProductSchema=require("./models/Product");
 
 const app = express();
 const { sendVerificationCode, verifyCode } = require("./services/emailService");
@@ -43,17 +44,58 @@ const orderSchema = new mongoose.Schema({
     {
       name: String,
       price: Number,
-      quantity: Number,
+      quantity: Number,     
     },
   ],
   total: { type: Number, required: true },
   status: { type: String, default: "Pending" },
   date: { type: Date, default: Date.now },
-  paymentStatus: { type: String, default: "Pending" }
+  paymentStatus: { type: String, default: "Pending" },
+
 
 });
 
 const Order = mongoose.model("Order", orderSchema);
+
+
+app.post("/api/products", verifyAdmin, async (req, res) => {
+  try {
+    const {
+      name,
+      stoneType,
+      price,
+      currency,
+      stoneSizeMM,
+      caratWeight
+    } = req.body;
+
+    if (!name || !price || !currency) {
+      return res.status(400).json({ error: "Missing required fields" });
+    }
+
+    const product = new Product({
+      name,
+      stoneType,
+      price,
+      currency,
+      stoneSizeMM,
+      caratWeight
+    });
+
+    await product.save();
+
+    res.json({
+      success: true,
+      message: "Item saved successfully",
+      product
+    });
+
+  } catch (err) {
+    console.error("❌ Save item error:", err);
+    res.status(500).json({ error: "Failed to save item" });
+  }
+});
+
 
 
 app.post("/admin/login", (req, res) => {
@@ -172,6 +214,7 @@ app.get("/api/orders/status", verifyAdmin, async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 });
+
 
 
 // using app
@@ -305,6 +348,17 @@ app.post("/get-account", async (req, res) => {
 });
 
 
+// checking if stock is available 
+
+app.put("/api/checkStock/:id",async (req, res) => {
+
+        const RequestedItem =req.params.id.trim();
+        console.log(RequestedItem);
+
+   // console.log("Searching for customer.id:", JSON.stringify(customerId));
+   
+ 
+});
 
 // ✅ Start server
 const PORT = 5001;
