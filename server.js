@@ -13,6 +13,8 @@ const app = express();
 const mongoURI = process.env.MONGO_URI;
 const { sendVerificationCode, verifyCode } = require("./services/emailService");
 
+const BACKEND_URL = "https://asterya-production.up.railway.app";
+
 // ✅ Middleware
 app.use(cors());
 app.use(express.json());
@@ -62,37 +64,7 @@ const Order = mongoose.model("Order", orderSchema);
 app.use("/videos", express.static(path.join(__dirname, "videos")));
 
 
-// ✅ ADD PRODUCT (Admin only)
-app.post("/api/products", verifyAdmin, async (req, res) => {
-  try {
-    const { name, stoneType,price,currency,stoneSizeMM,caratWeight} = req.body;
-
-    if (!name || !price) {
-      return res.status(400).json({ error: "Name and price are required" });
-    }
-
-    const product = new Product({
-      name,
-      stoneType,
-      price,
-      currency,
-      stoneSizeMM,
-      caratWeight
-    });
-
-    await product.save();
-
-    res.json({ success: true, product });
-  } catch (err) {
-    console.error("Add product error:", err);
-    res.status(500).json({ error: "Server error" });
-  }
-});
-
-
-
-
-app.post("/admin/login", (req, res) => {
+app.post("${BACKEND_URL}/admin/login", (req, res) => {
   const { username, password } = req.body;
 
   if (
@@ -139,7 +111,7 @@ function verifyAdmin(req, res, next) {
 }
 
 // adding items
-app.post("/api/products", verifyAdmin, async (req, res) => {
+app.post("${BACKEND_URL}/api/products", verifyAdmin, async (req, res) => {
   try {
     const {
       name,
@@ -180,18 +152,6 @@ app.post("/api/products", verifyAdmin, async (req, res) => {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
 // ✅ Test route
 app.get("/", (req, res) => {
   res.send("✅ API is running...");
@@ -200,7 +160,7 @@ app.get("/", (req, res) => {
 
 
 // Send email code
-app.post("/api/send-code", async (req, res) => {
+app.post("${BACKEND_URL}/api/send-code", async (req, res) => {
   try {
     console.log("send-code request body:", req.body);
     const {email,currency,cart} = req.body;
@@ -218,7 +178,7 @@ app.post("/api/send-code", async (req, res) => {
 });
 
 // Verify code
-app.post("/api/verify-code", (req, res) => {
+app.post("${BACKEND_URL}/api/verify-code", (req, res) => {
   const { email, code } = req.body;
 
   if (verifyCode(email, code)) {
@@ -231,7 +191,7 @@ app.post("/api/verify-code", (req, res) => {
 
 
 // ✅ GET all orders
-app.get("/api/orders",verifyAdmin, async (req, res) => {
+app.get("${BACKEND_URL}/api/orders",verifyAdmin, async (req, res) => {
   try {
     const orders = await Order.find({});
     res.json(orders);
@@ -243,7 +203,7 @@ app.get("/api/orders",verifyAdmin, async (req, res) => {
 });
 
 // GET orders by status
-app.get("/api/orders/status", verifyAdmin, async (req, res) => {
+app.get("${BACKEND_URL}/api/orders/status", verifyAdmin, async (req, res) => {
   try {
     const { status } = req.query;
 
@@ -264,7 +224,7 @@ app.get("/api/orders/status", verifyAdmin, async (req, res) => {
 
 
 // using app
-app.get("/api/orders/id/:id",async (req, res) => {
+app.get("${BACKEND_URL}/api/orders/id/:id",async (req, res) => {
   try {
     const order = await Order.findOne({ "customer.id": req.params.id });
     if (!order) return res.status(404).json({ message: "Order not found" });
@@ -282,7 +242,7 @@ app.get("/api/orders/id/:id",async (req, res) => {
 // Storage settings
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, "uploads/proofs");
+    cb(null, "${BACKEND_URL}/uploads/proofs");
   },
   filename: function (req, file, cb) {
     cb(null, Date.now() + "-" + file.originalname.replace(/\s+/g, "_"));
@@ -292,7 +252,7 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 
-app.post("/api/confirm-checkout", upload.single("paymentProof"), async (req, res) => {
+app.post("${BACKEND_URL}/api/confirm-checkout", upload.single("paymentProof"), async (req, res) => {
     try {
         console.log("📦 Raw req.body:", req.body);
 
@@ -334,7 +294,7 @@ app.post("/api/confirm-checkout", upload.single("paymentProof"), async (req, res
 
 // ✅ PUT (Update order status)from pending to completed to deleted
 
-app.put("/api/orders/:id", verifyAdmin, async (req, res) => {
+app.put("${BACKEND_URL}/api/orders/:id", verifyAdmin, async (req, res) => {
   try {
     const customerId = req.params.id.trim();
 
@@ -371,7 +331,7 @@ app.put("/api/orders/:id", verifyAdmin, async (req, res) => {
 });
 
 
-app.post("/get-account", async (req, res) => {
+app.post("${BACKEND_URL}/get-account", async (req, res) => {
   try {
     const { paymentType } = req.body;
 
@@ -394,17 +354,7 @@ app.post("/get-account", async (req, res) => {
 });
 
 
-// checking if stock is available 
 
-app.put("/api/checkStock/:id",async (req, res) => {
-
-        const RequestedItem =req.params.id.trim();
-        console.log(RequestedItem);
-
-   // console.log("Searching for customer.id:", JSON.stringify(customerId));
-   
- 
-});
 
 // ✅ Start server
 const PORT = 5001;
