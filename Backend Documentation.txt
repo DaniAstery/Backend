@@ -9,7 +9,7 @@ sudo docker start mongodb
 
 sudo docker rm -f mongodb
 
-connection string            mongodb://dani:dani@localhost:27017/
+connection string        
 
 
 
@@ -24,6 +24,3 @@ ngrok http 3000
  https://arlette-unpawed-jermaine.ngrok-free.dev   
 
 
-
- Backend Hosting command
- railway up
