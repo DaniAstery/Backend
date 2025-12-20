@@ -5,9 +5,12 @@ const dotenv = require("dotenv");
 dotenv.config();
 const jwt = require("jsonwebtoken");
 const BankAccount = require("./models/BankAccount");
-const ProductSchema=require("./models/Product");
-
+const Product = require("./models/Product");
+const multer = require("multer");
+const path = require("path");
 const app = express();
+
+
 const { sendVerificationCode, verifyCode } = require("./services/emailService");
 
 // ✅ Middleware
@@ -58,19 +61,17 @@ const orderSchema = new mongoose.Schema({
 const Order = mongoose.model("Order", orderSchema);
 
 
+// Serve videos folder
+app.use("/videos", express.static(path.join(__dirname, "videos")));
+
+
+// ✅ ADD PRODUCT (Admin only)
 app.post("/api/products", verifyAdmin, async (req, res) => {
   try {
-    const {
-      name,
-      stoneType,
-      price,
-      currency,
-      stoneSizeMM,
-      caratWeight
-    } = req.body;
+    const { name, stoneType,price,currency,stoneSizeMM,caratWeight} = req.body;
 
-    if (!name || !price || !currency) {
-      return res.status(400).json({ error: "Missing required fields" });
+    if (!name || !price) {
+      return res.status(400).json({ error: "Name and price are required" });
     }
 
     const product = new Product({
@@ -84,17 +85,13 @@ app.post("/api/products", verifyAdmin, async (req, res) => {
 
     await product.save();
 
-    res.json({
-      success: true,
-      message: "Item saved successfully",
-      product
-    });
-
+    res.json({ success: true, product });
   } catch (err) {
-    console.error("❌ Save item error:", err);
-    res.status(500).json({ error: "Failed to save item" });
+    console.error("Add product error:", err);
+    res.status(500).json({ error: "Server error" });
   }
 });
+
 
 
 
@@ -143,6 +140,58 @@ function verifyAdmin(req, res, next) {
     return res.status(403).json({ message: "Invalid or expired token" });
   }
 }
+
+// adding items
+app.post("/api/products", verifyAdmin, async (req, res) => {
+  try {
+    const {
+      name,
+      stoneType,
+      price,
+      currency,
+      stoneSizeMM,
+      caratWeight
+    } = req.body;
+
+    if (!name || !price || !currency) {
+      return res.status(400).json({ error: "Missing required fields" });
+    }
+
+    const product = new Product({
+      name,
+      stoneType,
+      price,
+      currency,
+      stoneSizeMM,
+      caratWeight
+    });
+
+    await product.save();
+
+    res.json({
+      success: true,
+      message: "Item saved successfully",
+      product
+    });
+
+  } catch (err) {
+    console.error("❌ Save item error:", err);
+    res.status(500).json({ error: "Failed to save item" });
+  }
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -230,8 +279,8 @@ app.get("/api/orders/id/:id",async (req, res) => {
 });
 
 
-const multer = require("multer");
-const path = require("path");
+
+
 
 // Storage settings
 const storage = multer.diskStorage({
