@@ -18,3 +18,7 @@ yarn start
 
 
 mnoTSO0FxEtA1j83
+
+running public ip 
+ngrok http 3000
+ https://arlette-unpawed-jermaine.ngrok-free.dev   

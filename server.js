@@ -10,17 +10,14 @@ const multer = require("multer");
 const path = require("path");
 const app = express();
 
-
+const mongoURI = process.env.MONGO_URI;
 const { sendVerificationCode, verifyCode } = require("./services/emailService");
 
 // ✅ Middleware
 app.use(cors());
 app.use(express.json());
 
-mongoose.connect("mongodb://dani:dani@localhost:27017/AsteyaDB?authSource=admin", {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-})
+mongoose.connect(mongoURI)
 .then(() => console.log("✅ MongoDB connected successfully"))
 .catch((err) => {
   console.error("❌ Database connection failed:", err.message);
