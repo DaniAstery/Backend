@@ -64,7 +64,7 @@ const Order = mongoose.model("Order", orderSchema);
 app.use("/videos", express.static(path.join(__dirname, "videos")));
 
 
-app.post("${BACKEND_URL}/admin/login", (req, res) => {
+app.post("https://asterya-production.up.railway.app/admin/login", (req, res) => {
   const { username, password } = req.body;
 
   if (
@@ -111,7 +111,7 @@ function verifyAdmin(req, res, next) {
 }
 
 // adding items
-app.post("${BACKEND_URL}/api/products", verifyAdmin, async (req, res) => {
+app.post("https://asterya-production.up.railway.app/api/products", verifyAdmin, async (req, res) => {
   try {
     const {
       name,
@@ -160,7 +160,7 @@ app.get("/", (req, res) => {
 
 
 // Send email code
-app.post("${BACKEND_URL}/api/send-code", async (req, res) => {
+app.post("https://asterya-production.up.railway.app/api/send-code", async (req, res) => {
   try {
     console.log("send-code request body:", req.body);
     const {email,currency,cart} = req.body;
@@ -178,7 +178,7 @@ app.post("${BACKEND_URL}/api/send-code", async (req, res) => {
 });
 
 // Verify code
-app.post("${BACKEND_URL}/api/verify-code", (req, res) => {
+app.post("https://asterya-production.up.railway.app/api/verify-code", (req, res) => {
   const { email, code } = req.body;
 
   if (verifyCode(email, code)) {
@@ -191,7 +191,7 @@ app.post("${BACKEND_URL}/api/verify-code", (req, res) => {
 
 
 // ✅ GET all orders
-app.get("${BACKEND_URL}/api/orders",verifyAdmin, async (req, res) => {
+app.get("https://asterya-production.up.railway.app/api/orders",verifyAdmin, async (req, res) => {
   try {
     const orders = await Order.find({});
     res.json(orders);
@@ -203,7 +203,7 @@ app.get("${BACKEND_URL}/api/orders",verifyAdmin, async (req, res) => {
 });
 
 // GET orders by status
-app.get("${BACKEND_URL}/api/orders/status", verifyAdmin, async (req, res) => {
+app.get("https://asterya-production.up.railway.app/api/orders/status", verifyAdmin, async (req, res) => {
   try {
     const { status } = req.query;
 
@@ -224,7 +224,7 @@ app.get("${BACKEND_URL}/api/orders/status", verifyAdmin, async (req, res) => {
 
 
 // using app
-app.get("${BACKEND_URL}/api/orders/id/:id",async (req, res) => {
+app.get("https://asterya-production.up.railway.app/api/orders/id/:id",async (req, res) => {
   try {
     const order = await Order.findOne({ "customer.id": req.params.id });
     if (!order) return res.status(404).json({ message: "Order not found" });
@@ -242,7 +242,7 @@ app.get("${BACKEND_URL}/api/orders/id/:id",async (req, res) => {
 // Storage settings
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, "${BACKEND_URL}/uploads/proofs");
+    cb(null, "https://asterya-production.up.railway.app/uploads/proofs");
   },
   filename: function (req, file, cb) {
     cb(null, Date.now() + "-" + file.originalname.replace(/\s+/g, "_"));
@@ -252,7 +252,7 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 
-app.post("${BACKEND_URL}/api/confirm-checkout", upload.single("paymentProof"), async (req, res) => {
+app.post("https://asterya-production.up.railway.app/api/confirm-checkout", upload.single("paymentProof"), async (req, res) => {
     try {
         console.log("📦 Raw req.body:", req.body);
 
@@ -294,7 +294,7 @@ app.post("${BACKEND_URL}/api/confirm-checkout", upload.single("paymentProof"), a
 
 // ✅ PUT (Update order status)from pending to completed to deleted
 
-app.put("${BACKEND_URL}/api/orders/:id", verifyAdmin, async (req, res) => {
+app.put("https://asterya-production.up.railway.app/api/orders/:id", verifyAdmin, async (req, res) => {
   try {
     const customerId = req.params.id.trim();
 
@@ -331,7 +331,7 @@ app.put("${BACKEND_URL}/api/orders/:id", verifyAdmin, async (req, res) => {
 });
 
 
-app.post("${BACKEND_URL}/get-account", async (req, res) => {
+app.post("https://asterya-production.up.railway.app/get-account", async (req, res) => {
   try {
     const { paymentType } = req.body;
 
