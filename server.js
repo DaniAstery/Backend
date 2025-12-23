@@ -10,6 +10,7 @@ const multer = require("multer");
 const path = require("path");
 const app = express();
 
+
 const mongoURI = process.env.MONGO_URI;
 const { sendVerificationCode, verifyCode } = require("./services/emailService");
 
@@ -18,7 +19,8 @@ const { sendVerificationCode, verifyCode } = require("./services/emailService");
 app.use(cors());
 app.use(express.json());
 
-mongoose.connect(mongoURI)
+mongoose.connect(process.env.MONGO_URI)
+
 .then(() => console.log("✅ MongoDB connected successfully"))
 .catch((err) => {
   console.error("❌ Database connection failed:", err.message);
@@ -396,5 +398,5 @@ app.put("/api/checkStock/:id",async (req, res) => {
 });
 
 // ✅ Start server
-const PORT = 5001;
+const PORT = process.env.PORT || 5001;
 app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
