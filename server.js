@@ -192,14 +192,14 @@ app.post("/api/send-code", async (req, res) => {
   try {
     console.log("send-code request body:", req.body);
 
-    const { email, currency, items } = req.body;
+    const { email, currency, cart } = req.body;
 
-    if (!email || !Array.isArray(items)) {
+    if (!email || !Array.isArray(cart)) {
       return res.status(400).json({ error: "Invalid request data" });
     }
 
     // items needed for email as they are being denied in the email service like video and image are removed
-    const cleanedItems = items.map(item => ({
+    const cleanedItems = cart.map(item => ({
       id: item.id,
       name: item.name,
       price: item.price,
