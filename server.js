@@ -93,8 +93,6 @@ app.post("/api/products", verifyAdmin, async (req, res) => {
 });
 
 
-
-
 app.post("/admin/login", (req, res) => {
   const { username, password } = req.body;
 
@@ -190,23 +188,34 @@ app.get("/", (req, res) => {
 
 
 
-// Send email code
 app.post("/api/send-code", async (req, res) => {
   try {
     console.log("send-code request body:", req.body);
-    const {email,currency,cart} = req.body;
 
-    if (!email)
-      return res.status(400).json({ error: "Email required" });
+    const { email, currency, items } = req.body;
 
-    await sendVerificationCode(email,currency,cart);
+    if (!email || !Array.isArray(items)) {
+      return res.status(400).json({ error: "Invalid request data" });
+    }
+
+    // items needed for email as they are being denied in the email service like video and image are removed
+    const cleanedItems = items.map(item => ({
+      id: item.id,
+      name: item.name,
+      price: item.price,
+      quantity: item.quantity
+    }));
+
+    await sendVerificationCode(email, currency, cleanedItems);
 
     res.json({ success: true, message: "Verification code sent" });
+
   } catch (err) {
     console.error("Email error:", err);
     res.status(500).json({ error: "Failed to send verification code" });
   }
 });
+
 
 // Verify code
 app.post("/api/verify-code", (req, res) => {
