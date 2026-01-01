@@ -2,32 +2,37 @@ const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
 const dotenv = require("dotenv");
-dotenv.config();
 const jwt = require("jsonwebtoken");
-const BankAccount = require("./models/BankAccount");
-const Product = require("./models/Product");
 const multer = require("multer");
 const path = require("path");
+
+// Load Models
+const BankAccount = require("./models/BankAccount");
+const Product = require("./models/Product");
+
+dotenv.config();
 const app = express();
-
-
-const mongoURI = process.env.MONGO_URI;
-const { sendVerificationCode, verifyCode } = require("./services/emailService");
-
 
 // ✅ Middleware
 app.use(cors());
 app.use(express.json());
 
+// ✅ Serve Static Folders (Crucial for accessing uploaded images/videos)
+app.use("/videos", express.static(path.join(__dirname, "videos")));
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+
+// ✅ Database Connection
 mongoose.connect(process.env.MONGO_URI)
+  .then(() => console.log("✅ MongoDB connected successfully"))
+  .catch((err) => {
+    console.error("❌ Database connection failed:", err.message);
+    process.exit(1);
+  });
 
-.then(() => console.log("✅ MongoDB connected successfully"))
-.catch((err) => {
-  console.error("❌ Database connection failed:", err.message);
-  process.exit(1);
-});
+// ✅ Services
+const { sendVerificationCode, verifyCode } = require("./services/emailService");
 
-// ✅ Define schema directly here
+// ✅ Order Schema (Fixed: Added paymentProof)
 const orderSchema = new mongoose.Schema({
   customer: {
     id: {
@@ -42,364 +47,155 @@ const orderSchema = new mongoose.Schema({
   },
   shipping: { type: String },
   payment: { type: String },
-  currency:{type:String},
+  currency: { type: String },
   items: [
     {
       name: String,
       price: Number,
-      quantity: Number,     
+      quantity: Number,
     },
   ],
   total: { type: Number, required: true },
   status: { type: String, default: "Pending" },
   date: { type: Date, default: Date.now },
   paymentStatus: { type: String, default: "Pending" },
-
-
+  paymentProof: { type: String }, // Added this field to store file path
 });
 
 const Order = mongoose.model("Order", orderSchema);
 
-
-// Serve videos folder
-app.use("/videos", express.static(path.join(__dirname, "videos")));
-
-
-// ✅ ADD PRODUCT (Admin only)
-app.post("/api/products", verifyAdmin, async (req, res) => {
-  try {
-    const { name, stoneType,price,currency,stoneSizeMM,caratWeight} = req.body;
-
-    if (!name || !price) {
-      return res.status(400).json({ error: "Name and price are required" });
-    }
-
-    const product = new Product({
-      name,
-      stoneType,
-      price,
-      currency,
-      stoneSizeMM,
-      caratWeight
-    });
-
-    await product.save();
-
-    res.json({ success: true, product });
-  } catch (err) {
-    console.error("Add product error:", err);
-    res.status(500).json({ error: "Server error" });
-  }
-});
-
-
-
-
-app.post("/admin/login", (req, res) => {
-  const { username, password } = req.body;
-
-  if (
-    username !== process.env.ADMIN_USERNAME ||
-    password !== process.env.ADMIN_PASSWORD
-  ) {
-    return res.status(401).json({ success: false, message: "Invalid credentials" });
-  }
-
-  const token = jwt.sign(
-    { role: "admin", username: username },
-    process.env.JWT_SECRET,
-    { expiresIn: "2h" }
-  );
-
-  res.json({
-    success: true,
-    message: "Login successful",
-    token
-  });
-});
-
-
+// ✅ Admin Middleware
 function verifyAdmin(req, res, next) {
   const authHeader = req.headers.authorization;
+  if (!authHeader) return res.status(401).json({ message: "No token provided" });
 
-  if (!authHeader)
-    return res.status(401).json({ message: "No token provided" });
-
-  const token = authHeader.split(" ")[1]; // "Bearer <token>"
-
+  const token = authHeader.split(" ")[1];
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-
-    if (decoded.role !== "admin")
-      return res.status(403).json({ message: "Not an admin" });
-
+    if (decoded.role !== "admin") return res.status(403).json({ message: "Not an admin" });
     req.admin = decoded;
     next();
-
   } catch (err) {
     return res.status(403).json({ message: "Invalid or expired token" });
   }
 }
 
-// adding items
+// ✅ Admin Login
+app.post("/admin/login", (req, res) => {
+  const { username, password } = req.body;
+  if (username !== process.env.ADMIN_USERNAME || password !== process.env.ADMIN_PASSWORD) {
+    return res.status(401).json({ success: false, message: "Invalid credentials" });
+  }
+  const token = jwt.sign({ role: "admin", username }, process.env.JWT_SECRET, { expiresIn: "2h" });
+  res.json({ success: true, message: "Login successful", token });
+});
+
+// ✅ Products (Consolidated into one route)
 app.post("/api/products", verifyAdmin, async (req, res) => {
   try {
-    const {
-      name,
-      stoneType,
-      price,
-      currency,
-      stoneSizeMM,
-      caratWeight
-    } = req.body;
-
+    const { name, stoneType, price, currency, stoneSizeMM, caratWeight } = req.body;
     if (!name || !price || !currency) {
       return res.status(400).json({ error: "Missing required fields" });
     }
-
-    const product = new Product({
-      name,
-      stoneType,
-      price,
-      currency,
-      stoneSizeMM,
-      caratWeight
-    });
-
+    const product = new Product({ name, stoneType, price, currency, stoneSizeMM, caratWeight });
     await product.save();
-
-    res.json({
-      success: true,
-      message: "Item saved successfully",
-      product
-    });
-
+    res.json({ success: true, message: "Product saved", product });
   } catch (err) {
-    console.error("❌ Save item error:", err);
-    res.status(500).json({ error: "Failed to save item" });
+    console.error("❌ Add product error:", err);
+    res.status(500).json({ error: "Server error" });
   }
 });
 
-
-
-
-// ✅ Test route
-app.get("/", (req, res) => {
-  res.send("✅ API is running...");
-});
-
-
-
-// Send email code
+// ✅ Email Verification
 app.post("/api/send-code", async (req, res) => {
   try {
-    console.log("send-code request body:", req.body);
-    const {email,currency,cart} = req.body;
-
-    if (!email)
-      return res.status(400).json({ error: "Email required" });
-
-    await sendVerificationCode(email,currency,cart);
-
-    res.json({ success: true, message: "Verification code sent" });
+    const { email, currency, cart } = req.body;
+    if (!email) return res.status(400).json({ error: "Email required" });
+    await sendVerificationCode(email, currency, cart);
+    res.json({ success: true, message: "Code sent" });
   } catch (err) {
-    console.error("Email error:", err);
-    res.status(500).json({ error: "Failed to send verification code" });
+    res.status(500).json({ error: "Failed to send code" });
   }
 });
 
-// Verify code
 app.post("/api/verify-code", (req, res) => {
   const { email, code } = req.body;
-
-  if (verifyCode(email, code)) {
-    return res.json({ success: true, message: "Email Verified!" });
-  }
-
-  res.status(400).json({ success: false, message: "Invalid or expired code" });
+  if (verifyCode(email, code)) return res.json({ success: true, message: "Verified!" });
+  res.status(400).json({ success: false, message: "Invalid code" });
 });
 
-
-
-// ✅ GET all orders
-app.get("/api/orders",verifyAdmin, async (req, res) => {
+// ✅ Orders Management
+app.get("/api/orders", verifyAdmin, async (req, res) => {
   try {
     const orders = await Order.find({});
     res.json(orders);
-    console.log("✅ Orders fetched:", orders);
   } catch (error) {
-    console.error("❌ Error fetching orders:", error);
     res.status(500).json({ message: "Server error" });
   }
 });
 
-// GET orders by status
-app.get("/api/orders/status", verifyAdmin, async (req, res) => {
-  try {
-    const { status } = req.query;
-
-    if (!status) {
-      return res.status(400).json({ message: "Status query is required" });
-    }
-
-    const orders = await Order.find({ status: status });
-
-    res.json(orders);
-    console.log(`📌 Orders with status '${status}' fetched:`, orders);
-  } catch (error) {
-    console.error("❌ Error fetching orders by status:", error);
-    res.status(500).json({ message: "Server error" });
-  }
-});
-
-
-
-// using app
-app.get("/api/orders/id/:id",async (req, res) => {
+app.get("/api/orders/id/:id", async (req, res) => {
   try {
     const order = await Order.findOne({ "customer.id": req.params.id });
     if (!order) return res.status(404).json({ message: "Order not found" });
     res.json(order);
   } catch (error) {
-    console.error("Error fetching order by customer.id:", error);
     res.status(500).json({ message: "Server error" });
   }
 });
 
-
-
-
-
-// Storage settings
+// ✅ Checkout & File Upload
 const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, "uploads/proofs");
-  },
-  filename: function (req, file, cb) {
-    cb(null, Date.now() + "-" + file.originalname.replace(/\s+/g, "_"));
+  destination: (req, file, cb) => cb(null, "uploads/proofs"),
+  filename: (req, file, cb) => cb(null, Date.now() + "-" + file.originalname.replace(/\s+/g, "_"))
+});
+const upload = multer({ storage });
+
+app.post("/api/confirm-checkout", upload.single("paymentProof"), async (req, res) => {
+  try {
+    if (!req.body.order) return res.status(400).json({ error: "Order data missing" });
+    const orderData = JSON.parse(req.body.order);
+    
+    if (req.file) {
+      orderData.paymentProof = `/uploads/proofs/${req.file.filename}`;
+    }
+
+    const newOrder = new Order(orderData);
+    await newOrder.save();
+    res.json({ success: true, orderId: newOrder._id });
+  } catch (err) {
+    console.error("❌ Checkout error:", err);
+    res.status(500).json({ error: "Server error" });
   }
 });
 
-const upload = multer({ storage });
-
-
-app.post("/api/confirm-checkout", upload.single("paymentProof"), async (req, res) => {
-    try {
-        console.log("📦 Raw req.body:", req.body);
-
-        // ⛔ If req.body.order does NOT exist → frontend not sending correctly
-        if (!req.body.order) {
-            console.log("❌ req.body.order is missing");
-            return res.status(400).json({ error: "Order data missing" });
-        }
-
-        // ✅ Parse the JSON string into an object
-        const orderData = JSON.parse(req.body.order);
-
-        console.log("📦 Parsed order:", orderData);
-
-        // ✅ Save file URL
-        let fileUrl = null;
-        if (req.file) {
-            fileUrl = `/uploads/proofs/${req.file.filename}`;
-        }
-
-        // Create order object to save
-        orderData.paymentProof = fileUrl;
-
-        // Save to DB
-        const newOrder = new Order(orderData);
-        await newOrder.save();
-
-        res.json({ success: true, orderId: newOrder._id });
-
-    } catch (err) {
-        console.error("❌ Error creating order:", err);
-        res.status(500).json({ error: "Server error" });
-    }
-});
-
-
-
-
-
-// ✅ PUT (Update order status)from pending to completed to deleted
-
+// ✅ Update Status
 app.put("/api/orders/:id", verifyAdmin, async (req, res) => {
   try {
-    const customerId = req.params.id.trim();
+    const order = await Order.findOne({ "customer.id": req.params.id.trim() });
+    if (!order) return res.status(404).json({ message: "Order not found" });
 
-    console.log("Searching for customer.id:", JSON.stringify(customerId));
-
-    const order = await Order.findOne({
-      "customer.id": { $eq: customerId }
-    });
-
-    if (!order) {
-      return res.status(404).json({
-        message: "Order not found",
-        searched: customerId
-      });
-    }
-
-    // Toggle status
-    if (order.status === "Pending Payment Invoice") {
-      order.status = "Completed";
-    } else if (order.status === "Completed") {
-      order.status = "Deleted";
-    }
+    if (order.status === "Pending Payment Invoice") order.status = "Completed";
+    else if (order.status === "Completed") order.status = "Deleted";
 
     await order.save();
-
-    res.json({
-      message: `Order updated to ${order.status}`,
-      order
-    });
-
+    res.json({ message: `Status: ${order.status}`, order });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 });
 
-
 app.post("/get-account", async (req, res) => {
   try {
     const { paymentType } = req.body;
-
-    if (!paymentType) {
-      return res.status(400).json({ message: "Payment type required" });
-    }
-
     const account = await BankAccount.findOne({ paymentType, isActive: true });
-
-    if (!account) {
-      return res.status(404).json({ message: "No account found" });
-    }
-
+    if (!account) return res.status(404).json({ message: "No account found" });
     res.json({ success: true, account });
-
   } catch (err) {
-    console.error(err);
     res.status(500).json({ message: "Server error" });
   }
 });
 
-
-// checking if stock is available 
-
-app.put("/api/checkStock/:id",async (req, res) => {
-
-        const RequestedItem =req.params.id.trim();
-        console.log(RequestedItem);
-
-   // console.log("Searching for customer.id:", JSON.stringify(customerId));
-   
- 
-});
-
-// ✅ Start server
+// ✅ Start
 const PORT = process.env.PORT || 5001;
-
-app.listen(PORT, "0.0.0.0", () => {
-  console.log(`Server running on port ${PORT}`);
-});
+app.listen(PORT, "0.0.0.0", () => console.log(`🚀 Server running on port ${PORT}`));
