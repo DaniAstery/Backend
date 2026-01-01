@@ -109,6 +109,7 @@ app.post("/api/products", verifyAdmin, async (req, res) => {
 // ✅ Email Verification
 app.post("/api/send-code", async (req, res) => {
       try {
+        console.log(req.body.cart);
         const { email, currency, cart } = req.body;
 
         if (!email || !currency || !Array.isArray(cart)) {
