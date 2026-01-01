@@ -108,22 +108,63 @@ app.post("/api/products", verifyAdmin, async (req, res) => {
 
 // ✅ Email Verification
 app.post("/api/send-code", async (req, res) => {
-  try {
-    const { email, currency, cart } = req.body;
-    if (!email) return res.status(400).json({ error: "Email required" });
-    await sendVerificationCode(email, currency, cart);
-    res.json({ success: true, message: "Code sent" });
-  } catch (err) {
-    res.status(500).json({ error: "Failed to send code" });
-  }
+      try {
+        const { email, currency, cart } = req.body;
+
+        if (!email || !currency || !Array.isArray(cart)) {
+          return res.status(400).json({
+            success: false,
+            message: "Invalid request data"
+          });
+        }
+
+        await sendVerificationCode(email, currency, cart);
+
+        res.json({
+          success: true,
+          message: "Verification code sent"
+        });
+      } catch (err) {
+        console.error("Send code error:", err);
+        res.status(500).json({
+          success: false,
+          message: "Failed to send verification code"
+        });
+      }
 });
 
-app.post("/api/verify-code", (req, res) => {
-  const { email, code } = req.body;
-  if (verifyCode(email, code)) return res.json({ success: true, message: "Verified!" });
-  res.status(400).json({ success: false, message: "Invalid code" });
-});
+app.post("/api/verify-code", async (req, res) => {
+      try {
+        const { email, code } = req.body;
 
+        if (!email || !code) {
+          return res.status(400).json({
+            success: false,
+            message: "Email and code are required"
+          });
+        }
+
+        const isValid = await verifyCode(email, code);
+
+        if (!isValid) {
+          return res.status(400).json({
+            success: false,
+            message: "Invalid or expired verification code"
+          });
+        }
+
+        res.json({
+          success: true,
+          message: "Verification successful"
+        });
+      } catch (err) {
+        console.error("Verify code error:", err);
+        res.status(500).json({
+          success: false,
+          message: "Failed to verify code"
+        });
+      } 
+});
 // ✅ Orders Management
 app.get("/api/orders", verifyAdmin, async (req, res) => {
   try {
