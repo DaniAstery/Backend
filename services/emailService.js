@@ -70,7 +70,7 @@ async function generatePaymentPDF(email, currency, cart) {
 
   console.log("📦 Cart items:", parsedCart);
 
-  const accounts = await BankAccount.find({
+  const accounts = await BankAccounts.find({
     currency,
     isActive: true
   });
