@@ -6,7 +6,6 @@ const jwt = require("jsonwebtoken");
 const multer = require("multer");
 const path = require("path");
 
-
 // Load Models
 const BankAccount = require("./models/BankAccount");
 const Product = require("./models/Product");
@@ -31,11 +30,7 @@ mongoose.connect(process.env.MONGO_URI)
   });
 
 // ✅ Services
-const {
-  sendVerificationCode,
-  verifyCode
-} = require("./services/emailService"); // path may differ
-
+const { sendVerificationCode, verifyCode } = require("./services/emailService");
 
 // ✅ Order Schema (Fixed: Added paymentProof)
 const orderSchema = new mongoose.Schema({
@@ -111,37 +106,31 @@ app.post("/api/products", verifyAdmin, async (req, res) => {
   }
 });
 
+// ✅ Email Verification
 app.post("/api/send-code", async (req, res) => {
-  try {
-    let { email, currency, cart } = req.body;
+      try {
+        const { email, currency, cart } = req.body;
 
-    if (!email || !currency || !cart) {
-      return res.status(400).json({
-        success: false,
-        message: "Email, currency, and cart are required"
-      });
-    }
+        if (!email || !currency || !Array.isArray(cart)) {
+          return res.status(400).json({
+            success: false,
+            message: "Invalid request data"
+          });
+        }
 
-    // ✅ normalize currency (critical)
-    currency = currency.trim().toUpperCase();
+        await sendVerificationCode(email, currency, cart);
 
-    // ❌ DO NOT force Array.isArray(cart)
-    // Let the service handle parsing (it already does)
-
-    await sendVerificationCode(email, currency, cart);
-
-    res.json({
-      success: true,
-      message: "Verification code sent"
-    });
-
-  } catch (err) {
-    console.error("Send code error:", err);
-    res.status(500).json({
-      success: false,
-      message: err.message || "Failed to send verification code"
-    });
-  }
+        res.json({
+          success: true,
+          message: "Verification code sent"
+        });
+      } catch (err) {
+        console.error("Send code error:", err);
+        res.status(500).json({
+          success: false,
+          message: "Failed to send verification code"
+        });
+      }
 });
 
 app.post("/api/verify-code", async (req, res) => {
@@ -176,8 +165,6 @@ app.post("/api/verify-code", async (req, res) => {
         });
       } 
 });
-
-
 // ✅ Orders Management
 app.get("/api/orders", verifyAdmin, async (req, res) => {
   try {

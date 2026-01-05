@@ -21,6 +21,7 @@ const transporter = nodemailer.createTransport({
 // SEND OTP + PDF
 // ------------------------
 async function sendVerificationCode(email, currency, cart) {
+  alert("Sending verification code to:", email);
   const code = Math.floor(100000 + Math.random() * 900000);
   otpStore[email] = code;
 
