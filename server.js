@@ -13,8 +13,17 @@ const Product = require("./models/Product");
 dotenv.config();
 const app = express();
 
-// ✅ Middleware
-app.use(cors());
+  // ✅ Middleware
+  app.use(cors({
+    origin: [
+
+      "https://backend-production-b183.up.railway.app",      // optional
+      "https://frontend-production-5ab1.up.railway.app" // later (if any)
+    ],
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"]
+  }));
+
 app.use(express.json());
 
 // ✅ Serve Static Folders (Crucial for accessing uploaded images/videos)
