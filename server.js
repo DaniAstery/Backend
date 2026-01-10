@@ -14,15 +14,7 @@ dotenv.config();
 const app = express();
 
   // ✅ Middleware
-  app.use(cors({
-    origin: [
-
-      "https://backend-production-b183.up.railway.app",      // optional
-      "https://frontend-production-5ab1.up.railway.app" // later (if any)
-    ],
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"]
-  }));
+  app.use(cors());
 
 app.use(express.json());
 

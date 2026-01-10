@@ -23,4 +23,4 @@ running public ip
 ngrok http 3000
  https://arlette-unpawed-jermaine.ngrok-free.dev   
 
-
+MONGO_URI=mongodb+srv://dani:dani@asteryacluster.zblomdw.mongodb.net/?AsteryaDBappName=AsteryaCluster
