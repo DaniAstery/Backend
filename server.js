@@ -195,6 +195,7 @@ const upload = multer({ storage });
 
 app.post("/api/confirm-checkout", upload.single("paymentProof"), async (req, res) => {
   try {
+    console.log("📥 Checkout request body:", req.body);
     if (!req.body.order) return res.status(400).json({ error: "Order data missing" });
     const orderData = JSON.parse(req.body.order);
     
