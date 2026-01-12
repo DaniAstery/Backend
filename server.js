@@ -31,7 +31,7 @@ mongoose.connect(process.env.MONGO_URI)
   });
 
 // ✅ Services
-const { sendVerificationCode, verifyCode } = require("./services/emailService");
+const { sendVerificationCode,verifyCode } = require("./services/emailService");
 
 // ✅ Order Schema (Fixed: Added paymentProof)
 const orderSchema = new mongoose.Schema({
