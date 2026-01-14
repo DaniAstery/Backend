@@ -244,6 +244,15 @@ app.post("/get-account", async (req, res) => {
   }
 });
 
+
+// Root route - confirms backend is running
+app.get("/", (req, res) => {
+  res.send("✅ Backend is running 🚀");
+});
+
+
+
+
 // ✅ Start
 const PORT = process.env.PORT || 5001;
 app.listen(PORT, "0.0.0.0", () => console.log(`🚀 Server running on port ${PORT}`));
