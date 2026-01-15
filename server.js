@@ -9,7 +9,6 @@ const path = require("path");
 // Load Models
 const BankAccount = require("./models/BankAccount");
 const Product = require("./models/Product");
-const Order = require("./models/Order");
 
 dotenv.config();
 const app = express();
@@ -33,6 +32,38 @@ mongoose.connect(process.env.MONGO_URI)
 
 // ✅ Services
 const { sendVerificationCode,verifyCode } = require("./services/emailService");
+
+// ✅ Order Schema (Fixed: Added paymentProof)
+const orderSchema = new mongoose.Schema({
+  customer: {
+    id: {
+      type: String,
+      default: function () {
+        return "ORD-" + Date.now();
+      },
+    },
+    name: { type: String, required: true },
+    email: { type: String, required: true },
+    address: { type: String, required: true },
+  },
+  shipping: { type: String },
+  payment: { type: String },
+  currency: { type: String },
+  items: [
+    {
+      name: String,
+      price: Number,
+      quantity: Number,
+    },
+  ],
+  total: { type: Number, required: true },
+  status: { type: String, default: "Pending" },
+  date: { type: Date, default: Date.now },
+  paymentStatus: { type: String, default: "Pending" },
+  paymentProof: { type: String }, // Added this field to store file path
+});
+
+const Order = mongoose.model("Order", orderSchema, "orders");
 
 
 // ✅ Admin Middleware
