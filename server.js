@@ -213,22 +213,37 @@ app.post("/api/confirm-checkout", upload.single("paymentProof"), async (req, res
   }
 });
 
-// ✅ Update Status
+
 app.put("/api/orders/:id", verifyAdmin, async (req, res) => {
   try {
-    const order = await Order.findById(req.params.id.trim());
-    if (!order) return res.status(404).json({ message: "Order not found" });
+    const { id } = req.params;
 
-    if (order.paymentStatus === "Pending") {
-      order.status = "Completed";
-    } else if (order.status === "Completed") {
-      await order.deleteOne();
-      return res.json({ message: "Order deleted" });
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "Invalid order ID" });
     }
 
-    await order.save();
-    res.json({ message: `Status updated`, order });
+    const order = await Order.findById(id);
+    if (!order) {
+      return res.status(404).json({ message: "Order not found" });
+    }
+
+    if (order.status === "Pending") {
+      order.status = "Completed";
+      await order.save();
+      return res.json({ message: "✅ Order completed", order });
+    }
+
+    if (order.status === "Completed") {
+      await order.deleteOne();
+      return res.json({ message: "🗑️ Order deleted" });
+    }
+
+    return res.status(400).json({
+      message: `Unhandled order status: ${order.status}`
+    });
+
   } catch (error) {
+    console.error("❌ Update order error:", error);
     res.status(500).json({ message: error.message });
   }
 });
