@@ -219,9 +219,9 @@ app.put("/api/orders/:id", verifyAdmin, async (req, res) => {
     const order = await Order.findById(req.params.id.trim());
     if (!order) return res.status(404).json({ message: "Order not found" });
 
-    if (order.status === "Pending Payment Invoice") {
-      order.status = "Completed";
-    } else if (order.status === "Completed") {
+    if (order.paymentStatus === "Pending") {
+      order.paymentStatus = "Completed";
+    } else if (order.paymentStatus === "Completed") {
       await order.deleteOne();
       return res.json({ message: "Order deleted" });
     }
