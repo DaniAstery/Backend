@@ -57,7 +57,7 @@ const orderSchema = new mongoose.Schema({
     },
   ],
   total: { type: Number, required: true },
-  status: { type: String, default: "Pending" },
+  status: { type: String},
   date: { type: Date, default: Date.now },
   paymentStatus: { type: String, default: "Pending" },
   paymentProof: { type: String }, // Added this field to store file path
