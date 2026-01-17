@@ -214,40 +214,24 @@ app.post("/api/confirm-checkout", upload.single("paymentProof"), async (req, res
 });
 
 
-document.addEventListener("click", async e => {
-  const id = e.target.dataset.id;
-  const token = localStorage.getItem("adminToken");
-  if (!id || !token) return;
+app.put("/api/orders/:id", verifyAdmin, async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id.trim());
+    if (!order) return res.status(404).json({ message: "Order not found" });
 
-  if (e.target.classList.contains("complete-btn")) {
-    await fetch(
-      `https://backend-production-4905.up.railway.app/api/orders/${id}`,
-      {
-        method: "PUT",
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      }
-    );
-    fetchOrders();
-  }
+    if (order.paymentStatus === "Pending") {
+      order.paymentStatus = "Completed";
+    } else if (order.paymentStatus === "Completed") {
+      await order.deleteOne();
+      return res.json({ message: "Order deleted" });
+    }
 
-  if (e.target.classList.contains("delete-btn")) {
-    if (!confirm("Delete this order?")) return;
-
-    await fetch(
-      `https://backend-production-4905.up.railway.app/api/orders/${id}`,
-      {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      }
-    );
-    fetchOrders();
+    await order.save();
+    res.json({ message: `Status updated`, order });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 });
-
 
 
 app.post("/get-account", async (req, res) => {
