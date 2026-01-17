@@ -216,6 +216,7 @@ app.post("/api/confirm-checkout", upload.single("paymentProof"), async (req, res
 
 app.put("/api/orders/:id", verifyAdmin, async (req, res) => {
   try {
+    alert(req.params.id);
     const order = await Order.findById(req.params.id.trim());
     if (!order) return res.status(404).json({ message: "Order not found" });
 
