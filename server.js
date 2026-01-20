@@ -1,6 +1,5 @@
 const express = require("express");
 const mongoose = require("mongoose");
-const cors = require("cors");
 const dotenv = require("dotenv");
 const jwt = require("jsonwebtoken");
 const multer = require("multer");
@@ -11,25 +10,38 @@ const BankAccount = require("./models/BankAccount");
 const Product = require("./models/Product");
 
 dotenv.config();
-const app = express();
 
-  // ✅ Middleware
-    const cors = require("cors");
+const app = express(); // ✅ app MUST come before app.use()
 
-    app.use(cors({
-      origin: "https://daniasterygithubio-production.up.railway.app",
-      methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-      allowedHeaders: ["Content-Type", "Authorization"],
-    }));
+// 🔥 FORCE CORS + PREFLIGHT (MUST BE FIRST MIDDLEWARE)
+app.use((req, res, next) => {
+  res.header(
+    "Access-Control-Allow-Origin",
+    "https://daniasterygithubio-production.up.railway.app"
+  );
+  res.header(
+    "Access-Control-Allow-Methods",
+    "GET,POST,PUT,DELETE,OPTIONS"
+  );
+  res.header(
+    "Access-Control-Allow-Headers",
+    "Content-Type, Authorization"
+  );
 
-    app.options("*", cors());
+  if (req.method === "OPTIONS") {
+    return res.sendStatus(204);
+  }
 
+  next();
+});
 
+// ✅ Body parser AFTER CORS
 app.use(express.json());
 
-// ✅ Serve Static Folders (Crucial for accessing uploaded images/videos)
+// ✅ Serve Static Folders
 app.use("/videos", express.static(path.join(__dirname, "videos")));
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+
 
 // ✅ Database Connection
 mongoose.connect(process.env.MONGO_URI)
