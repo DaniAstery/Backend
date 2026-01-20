@@ -15,22 +15,22 @@ const app = express(); // ✅ app MUST come before app.use()
 
 // 🔥 FORCE CORS + PREFLIGHT (MUST BE FIRST MIDDLEWARE)
 app.use((req, res, next) => {
-  res.header(
-    "Access-Control-Allow-Origin",
-    "https://daniasterygithubio-production.up.railway.app"
-  );
-  res.header(
-    "Access-Control-Allow-Methods",
-    "GET,POST,PUT,DELETE,OPTIONS"
-  );
-  res.header(
-    "Access-Control-Allow-Headers",
-    "Content-Type, Authorization"
-  );
+      res.header(
+        "Access-Control-Allow-Origin",
+        "https://daniasterygithubio-production.up.railway.app"
+      );
+      res.header(
+        "Access-Control-Allow-Methods",
+        "GET,POST,PUT,DELETE,OPTIONS"
+      );
+      res.header(
+        "Access-Control-Allow-Headers",
+        "Content-Type, Authorization"
+      );
 
-  if (req.method === "OPTIONS") {
-    return res.sendStatus(204);
-  }
+        if (req.method === "OPTIONS") {
+          return res.sendStatus(204);
+        }
 
   next();
 });
