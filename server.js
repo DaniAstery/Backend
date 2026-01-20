@@ -14,7 +14,16 @@ dotenv.config();
 const app = express();
 
   // ✅ Middleware
-  app.use(cors());
+    const cors = require("cors");
+
+    app.use(cors({
+      origin: "https://daniasterygithubio-production.up.railway.app",
+      methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+      allowedHeaders: ["Content-Type", "Authorization"],
+    }));
+
+    app.options("*", cors());
+
 
 app.use(express.json());
 
