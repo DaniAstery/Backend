@@ -117,20 +117,27 @@ app.post("/api/products", verifyAdmin, async (req, res) => {
 });
 
 // ✅ Email Verification
- app.post("/api/send-code", async (req, res) => {
-  const { email, currency, cart } = req.body;
+app.post("/api/send-code", async (req, res) => {
+  try {
+    const { email, currency, cart } = req.body;
 
-  if (!email || !currency || !Array.isArray(cart)) {
-    return res.status(400).json({ success: false, message: "Invalid request data" });
+    if (!email) {
+      return res.status(400).json({ success: false, message: "Email is required" });
+    }
+
+    // Send OTP + PDF using emailService.js
+    const otp = await sendVerificationCode(email, currency, cart);
+
+    // Return success (you can optionally return the otp for local testing)
+    res.json({
+      success: true,
+      message: "Verification code sent",
+      otp // remove this in production for security
+    });
+  } catch (err) {
+    console.error("Send code error:", err);
+    res.status(500).json({ success: false, message: err.message });
   }
-
-  const otp = await sendVerificationCode(email, currency, cart);
-
-  res.json({
-    success: true,
-    message: "Verification code sent",
-    code: otp // optional, for testing only
-  });
 });
 
 

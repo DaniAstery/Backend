@@ -5,7 +5,6 @@ const PDFDocument = require("pdfkit-table");
 const BankAccount = require("../models/BankAccount");
 const { Resend } = require("resend");
 require("dotenv").config();
-
 const otpStore = {};
 
 // Initialize Resend with your API key from .env
