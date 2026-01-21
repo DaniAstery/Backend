@@ -1,10 +1,12 @@
 const express = require("express");
 const mongoose = require("mongoose");
 const dotenv = require("dotenv");
+dotenv.config();
 const jwt = require("jsonwebtoken");
 const multer = require("multer");
 const path = require("path");
-const resend = new (require("resend"))(process.env.RESEND_API_KEY); 
+const { Resend } = require("resend");
+const resend = new Resend(process.env.RESEND_API_KEY); 
 
 
 // Load Models
