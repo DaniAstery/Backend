@@ -4,6 +4,9 @@ const dotenv = require("dotenv");
 const jwt = require("jsonwebtoken");
 const multer = require("multer");
 const path = require("path");
+const { Resend } = require("resend");
+const resend = new Resend(process.env.RESEND_API_KEY); 
+
 
 // Load Models
 const BankAccount = require("./models/BankAccount");
@@ -13,27 +16,8 @@ dotenv.config();
 
 const app = express(); // ✅ app MUST come before app.use()
 
-// 🔥 FORCE CORS + PREFLIGHT (MUST BE FIRST MIDDLEWARE)
-app.use((req, res, next) => {
-      res.header(
-        "Access-Control-Allow-Origin",
-        "https://daniasterygithubio-production.up.railway.app"
-      );
-      res.header(
-        "Access-Control-Allow-Methods",
-        "GET,POST,PUT,DELETE,OPTIONS"
-      );
-      res.header(
-        "Access-Control-Allow-Headers",
-        "Content-Type, Authorization"
-      );
 
-        if (req.method === "OPTIONS") {
-          return res.sendStatus(204);
-        }
-
-  next();
-});
+app.use(cors());
 
 // ✅ Body parser AFTER CORS
 app.use(express.json());
@@ -130,32 +114,23 @@ app.post("/api/products", verifyAdmin, async (req, res) => {
 });
 
 // ✅ Email Verification
-app.post("/api/send-code", async (req, res) => {
-      try {
-        const { email, currency, cart } = req.body;
+  app.post("/api/send-code", async (req, res) => {
+    const { email, code } = req.body;
 
-        if (!email || !currency || !Array.isArray(cart)) {
-          return res.status(400).json({
-            success: false,
-            message: "Invalid request data"
-          });
-        }
+    try {
+      await resend.emails.send({
+        from: "Asterya <onboarding@resend.dev>",
+        to: email,
+        subject: "Your OTP",
+        html: `<h2>Your OTP is ${code}</h2>`,
+      });
 
-        await sendVerificationCode(email, currency, cart);
-
-        res.json({
-          success: true,
-          message: "Verification code sent"
-        });
-      } catch (err) {
-        console.error("Send code error:", err);
-        res.status(500).json({
-          success: false,
-          message: "Failed to send verification code"
-        });
-      }
-});
-
+      res.json({ success: true, message: "Verification code sent" });
+    } catch (err) {
+      console.error("Send code error:", err);
+      res.status(500).json({ success: false, message: "Failed to send verification code" });
+    }
+  });
 app.post("/api/verify-code", async (req, res) => {
       try {
         const { email, code } = req.body;
@@ -277,5 +252,5 @@ app.get("/", (req, res) => {
 
 
 // ✅ Start
-const PORT = process.env.PORT || 5001;
+const PORT = process.env.PORT || 5003;
 app.listen(PORT, "0.0.0.0", () => console.log(`🚀 Server running on port ${PORT}`));
