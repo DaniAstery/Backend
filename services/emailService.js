@@ -1,21 +1,15 @@
-const nodemailer = require("nodemailer");
-const PDFDocument = require("pdfkit-table");
+// emailService.js
 const fs = require("fs");
 const path = require("path");
+const PDFDocument = require("pdfkit-table");
 const BankAccount = require("../models/BankAccount");
+const { Resend } = require("resend");
+require("dotenv").config();
 
 const otpStore = {};
 
-// ------------------------
-// Email transporter
-// ------------------------
-const transporter = nodemailer.createTransport({
-  service: "Gmail",
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS
-  }
-});
+// Initialize Resend with your API key from .env
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 // ------------------------
 // SEND OTP + PDF
@@ -24,18 +18,20 @@ async function sendVerificationCode(email, currency, cart) {
   const code = Math.floor(100000 + Math.random() * 900000);
   otpStore[email] = code;
 
-
   const pdfPath = await generatePaymentPDF(email, currency, cart);
+  const pdfData = fs.readFileSync(pdfPath);
 
-  await transporter.sendMail({
-    from: process.env.EMAIL_USER,
+  // Send email via Resend
+  await resend.emails.send({
+    from: "Asterya <onboarding@resend.dev>", // must be verified in Resend
     to: email,
     subject: "Your Verification Code & Payment Order",
     text: `Your verification code is: ${code}`,
     attachments: [
       {
-        filename: "Payment_Order.pdf",
-        path: pdfPath
+        type: "application/pdf",
+        name: "Payment_Order.pdf",
+        data: pdfData.toString("base64")
       }
     ]
   });
@@ -54,16 +50,10 @@ function verifyCode(email, code) {
   return false;
 }
 
-module.exports = {
-  sendVerificationCode,
-  verifyCode
-};
-
 // ========================
 // PDF GENERATION
 // ========================
 async function generatePaymentPDF(email, currency, cart) {
-
   const parsedCart = Array.isArray(cart)
     ? cart
     : JSON.parse(cart || "[]");
@@ -86,49 +76,35 @@ async function generatePaymentPDF(email, currency, cart) {
   const stream = fs.createWriteStream(filepath);
   doc.pipe(stream);
 
-  /* =======================
-     HEADER + LOGO
-  ======================= */
   try {
     doc.image(path.join(__dirname, "assets", "logo.png"), 40, 30, { width: 80 });
   } catch {}
 
-  doc
-    .font("Helvetica-Bold")
+  doc.font("Helvetica-Bold")
     .fontSize(20)
     .text("Asterya TRADING P.L.C", 0, 35, { align: "center" });
 
-  doc
-    .font("Helvetica")
+  doc.font("Helvetica")
     .fontSize(12)
     .text("Gemstone & Jewellery", { align: "center" })
     .text("Addis Ababa, Ethiopia", { align: "center" });
 
   doc.moveDown(2);
 
-  /* =======================
-     PAYMENT ORDER DETAILS
-  ======================= */
-  doc
-    .font("Helvetica-Bold")
+  doc.font("Helvetica-Bold")
     .fontSize(14)
     .text("Payment Order Details", { underline: true });
 
   doc.moveDown(0.7);
 
-  doc
-    .font("Helvetica")
+  doc.font("Helvetica")
     .fontSize(12)
     .text(`Customer Email: ${email}`)
     .text(`Currency: ${currency}`);
 
   doc.moveDown(1.5);
 
-  /* =======================
-     ORDER DETAILS (ITEMS)
-  ======================= */
-  doc
-    .font("Helvetica-Bold")
+  doc.font("Helvetica-Bold")
     .fontSize(14)
     .text("Order Details", { underline: true });
 
@@ -137,7 +113,6 @@ async function generatePaymentPDF(email, currency, cart) {
   if (parsedCart.length === 0) {
     doc.font("Helvetica").fontSize(12).text("No items in the order.");
   } else {
-
     const totalPrice = parsedCart.reduce(
       (sum, item) => sum + item.price * item.quantity,
       0
@@ -160,10 +135,7 @@ async function generatePaymentPDF(email, currency, cart) {
       width: 500,
       x: 40,
       y: doc.y,
-
-      prepareHeader: () =>
-        doc.font("Helvetica-Bold").fontSize(12).fillColor("#007BFF"),
-
+      prepareHeader: () => doc.font("Helvetica-Bold").fontSize(12).fillColor("#007BFF"),
       prepareRow: (row, i) => {
         if (i === parsedCart.length) {
           doc.font("Helvetica-Bold").fontSize(12).fillColor("#007BFF");
@@ -171,13 +143,9 @@ async function generatePaymentPDF(email, currency, cart) {
           doc.font("Helvetica").fontSize(11).fillColor("#000000");
         }
       },
-
       rowEvenColor: "#F5F7FA",
       rowOddColor: "#FFFFFF",
-
-      rowBackground: (row, i) =>
-        i === parsedCart.length ? "#E6F0FF" : null,
-
+      rowBackground: (row, i) => i === parsedCart.length ? "#E6F0FF" : null,
       padding: 6,
       borderWidth: 1
     });
@@ -185,9 +153,6 @@ async function generatePaymentPDF(email, currency, cart) {
 
   doc.moveDown(2);
 
-  /* =======================
-     BANK DETAILS TABLE
-  ======================= */
   const bankTable = {
     headers: ["Bank", "Account Name", "Account Number", "Branch", "SWIFT"],
     rows: accounts.map(acc => [
@@ -203,13 +168,8 @@ async function generatePaymentPDF(email, currency, cart) {
     width: 500,
     x: 40,
     y: doc.y,
-
-    prepareHeader: () =>
-      doc.font("Helvetica-Bold").fontSize(12).fillColor("#FF5722"),
-
-    prepareRow: () =>
-      doc.font("Helvetica").fontSize(11).fillColor("#000000"),
-
+    prepareHeader: () => doc.font("Helvetica-Bold").fontSize(12).fillColor("#FF5722"),
+    prepareRow: () => doc.font("Helvetica").fontSize(11).fillColor("#000000"),
     rowEvenColor: "#FAFAFA",
     rowOddColor: "#FFFFFF",
     padding: 6,
@@ -218,18 +178,13 @@ async function generatePaymentPDF(email, currency, cart) {
 
   doc.moveDown(2);
 
-  /* =======================
-     PAYMENT INSTRUCTIONS
-  ======================= */
-  doc
-    .font("Helvetica-Bold")
+  doc.font("Helvetica-Bold")
     .fontSize(14)
     .text("Payment Instructions", { underline: true });
 
   doc.moveDown(0.6);
 
-  doc
-    .font("Helvetica")
+  doc.font("Helvetica")
     .fontSize(12)
     .list([
       "Choose one bank from the table above and complete the payment.",
@@ -241,43 +196,26 @@ async function generatePaymentPDF(email, currency, cart) {
 
   doc.moveDown(1.5);
 
-  /* =======================
-     STAMP
-  ======================= */
   try {
-    doc.image(
-      path.join(__dirname, "assets", "stamp.png"),
-      200,
-      doc.y,
-      { width: 120 }
-    );
+    doc.image(path.join(__dirname, "assets", "stamp.png"), 200, doc.y, { width: 120 });
   } catch {}
 
   doc.moveDown(2);
 
-  /* =======================
-     FOOTER
-  ======================= */
-  doc
-    .font("Helvetica-Bold")
+  doc.font("Helvetica-Bold")
     .fontSize(14)
     .text("Customer Support", { underline: true });
 
-  doc
-    .font("Helvetica")
+  doc.font("Helvetica")
     .fontSize(12)
     .text("WhatsApp: Daniel Temesgen")
     .text("Phone: +251 998 476 704");
 
   doc.moveDown(2);
 
-  doc
-    .fontSize(10)
+  doc.fontSize(10)
     .fillColor("#666666")
-    .text(
-      "© Asterya One Member Trading P.L.C – All Rights Reserved",
-      { align: "center" }
-    );
+    .text("© Asterya One Member Trading P.L.C – All Rights Reserved", { align: "center" });
 
   doc.end();
 
@@ -286,3 +224,5 @@ async function generatePaymentPDF(email, currency, cart) {
     stream.on("error", reject);
   });
 }
+
+module.exports = { sendVerificationCode, verifyCode };
