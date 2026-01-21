@@ -7,6 +7,7 @@ const jwt = require("jsonwebtoken");
 const multer = require("multer");
 const path = require("path");
 const { Resend } = require("resend");
+const { sendVerificationCode,verifyCode } = require("./services/emailService");
 const resend = new Resend(process.env.RESEND_API_KEY); 
 
 
@@ -38,7 +39,7 @@ mongoose.connect(process.env.MONGO_URI)
   });
 
 // ✅ Services
-const { sendVerificationCode,verifyCode } = require("./services/emailService");
+
 
 // ✅ Order Schema (Fixed: Added paymentProof)
 const orderSchema = new mongoose.Schema({
@@ -116,23 +117,23 @@ app.post("/api/products", verifyAdmin, async (req, res) => {
 });
 
 // ✅ Email Verification
-  app.post("/api/send-code", async (req, res) => {
-    const { email, code } = req.body;
+ app.post("/api/send-code", async (req, res) => {
+  const { email, currency, cart } = req.body;
 
-    try {
-      await resend.emails.send({
-        from: "Asterya <onboarding@resend.dev>",
-        to: email,
-        subject: "Your OTP",
-        html: `<h2>Your OTP is ${code}</h2>`,
-      });
+  if (!email || !currency || !Array.isArray(cart)) {
+    return res.status(400).json({ success: false, message: "Invalid request data" });
+  }
 
-      res.json({ success: true, message: "Verification code sent" });
-    } catch (err) {
-      console.error("Send code error:", err);
-      res.status(500).json({ success: false, message: "Failed to send verification code" });
-    }
+  const otp = await sendVerificationCode(email, currency, cart);
+
+  res.json({
+    success: true,
+    message: "Verification code sent",
+    code: otp // optional, for testing only
   });
+});
+
+
 app.post("/api/verify-code", async (req, res) => {
       try {
         const { email, code } = req.body;
