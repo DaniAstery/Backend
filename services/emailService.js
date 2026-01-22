@@ -14,6 +14,7 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 // SEND OTP + PDF
 // ------------------------
 async function sendVerificationCode(email, currency, cart) {
+  
   const code = Math.floor(100000 + Math.random() * 900000);
   otpStore[email] = code;
 
@@ -22,15 +23,14 @@ async function sendVerificationCode(email, currency, cart) {
 
   // Send email via Resend
   await resend.emails.send({
-    from: "Asterya <onboarding@resend.dev>", // must be verified in Resend
+    from: "Asterya <onboarding@resend.dev>",
     to: email,
     subject: "Your Verification Code & Payment Order",
     text: `Your verification code is: ${code}`,
     attachments: [
       {
-        type: "application/pdf",
-        name: "Payment_Order.pdf",
-        data: pdfData.toString("base64")
+        filename: "Payment_Order.pdf",
+        path: pdfPath
       }
     ]
   });
