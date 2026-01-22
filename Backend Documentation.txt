@@ -23,7 +23,7 @@ running public ip
 ngrok http 3000
 https://arlette-unpawed-jermaine.ngrok-free.dev   
 
-MONGO_URI=mongodb+srv://dani:dani@asteryacluster.zblomdw.mongodb.net/?AsteryaDBappName=AsteryaCluster
+MONGO_URI=mongodb+srv://dani:dani@asteryacluster.zblomdw.mongodb.net/?AsteryaDB=AsteryaCluster
 
 
 
@@ -50,3 +50,6 @@ app.use((req, res, next) => {
 
   next();
 });
+
+
+mongodb password  inadinad
