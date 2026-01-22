@@ -14,6 +14,7 @@ async function sendVerificationCode(email, currency, cart) {
   otpStore[email] = code;
 
   const pdfPath = await generatePaymentPDF(email, currency, cart);
+  const fileBuffer = fs.readFileSync(pdfPath);
 
   const result = await resend.emails.send({
     from: "Asterya <onboarding@resend.dev>", // ✅ REQUIRED
@@ -23,7 +24,7 @@ async function sendVerificationCode(email, currency, cart) {
     attachments: [
       {
         filename: "Payment_Order.pdf",
-        path: pdfPath
+        content: fileBuffer
       }
     ]
   });
