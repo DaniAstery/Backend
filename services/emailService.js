@@ -7,23 +7,16 @@ const { Resend } = require("resend");
 require("dotenv").config();
 const otpStore = {};
 
-// Initialize Resend with your API key from .env
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-// ------------------------
-// SEND OTP + PDF
-// ------------------------
 async function sendVerificationCode(email, currency, cart) {
-  
   const code = Math.floor(100000 + Math.random() * 900000);
   otpStore[email] = code;
 
   const pdfPath = await generatePaymentPDF(email, currency, cart);
-  const pdfData = fs.readFileSync(pdfPath);
 
-  // Send email via Resend
-  await resend.emails.send({
-    from: "Asterya <onboarding@resend.dev>",
+  const result = await resend.emails.send({
+    from: "Asterya <onboarding@resend.dev>", // ✅ REQUIRED
     to: email,
     subject: "Your Verification Code & Payment Order",
     text: `Your verification code is: ${code}`,
@@ -35,8 +28,16 @@ async function sendVerificationCode(email, currency, cart) {
     ]
   });
 
+  // 🔥 CRITICAL LOG
+  console.log("📨 Resend response:", result);
+
+  if (result.error) {
+    throw new Error(result.error.message);
+  }
+
   return code;
 }
+
 
 // ------------------------
 // VERIFY OTP
