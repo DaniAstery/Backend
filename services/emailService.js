@@ -17,7 +17,7 @@ async function sendVerificationCode(email, currency, cart) {
   const fileBuffer = fs.readFileSync(pdfPath);
 
   const result = await resend.emails.send({
-    from: "Asterya <asteryagemstone.com>", // ✅ REQUIRED
+    from: "Asterya <daniel.mamo@asteryagemstone.com>", // ✅ REQUIRED
     to: email,
     subject: "Your Verification Code & Payment Order",
     text: `Your verification code is: ${code}`,
