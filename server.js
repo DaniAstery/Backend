@@ -222,12 +222,17 @@ app.post("/api/confirm-checkout", upload.single("paymentProof"), async (req, res
 
 app.put("/api/orders/:id", verifyAdmin, async (req, res) => {
   try {
-    alert(req.params.id);
-    const order = await Order.findById(req.params.id.trim());
-    if (!order) return res.status(404).json({ message: "Order not found" });
+    const orderId = req.params.id.trim();
+    const order = await Order.findById(orderId);
 
-    if (order.paymentStatus !== "Pending") {
+    if (!order) {
+      return res.status(404).json({ message: "Order not found" });
+    }
+
+    // Update only the status and paymentStatus fields
+    if (order.paymentStatus === "Pending") {
       order.paymentStatus = "Completed";
+      order.status = "Completed"; // Update the status field
     } else if (order.paymentStatus === "Completed") {
       await order.deleteOne();
       return res.json({ message: "Order deleted" });
