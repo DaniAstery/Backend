@@ -17,17 +17,18 @@ async function sendVerificationCode(email, currency, cart) {
   const fileBuffer = fs.readFileSync(pdfPath);
 
   const result = await resend.emails.send({
-    from: "Asterya <daniel.mamo@asteryagemstone.com>", // ✅ REQUIRED
-    to: email,
-    subject: "Your Verification Code & Payment Order",
-    text: `Your verification code is: ${code}`,
-    attachments: [
-      {
-        filename: "Payment_Order.pdf",
-        content: fileBuffer
-      }
-    ]
-  });
+  from: "Asterya <daniel.mamo@asteryagemstone.com>", 
+  to: email,
+  subject: "Your Verification Code & Payment Order",
+  text: `Your verification code is: ${code}`,
+  attachments: [
+    {
+      filename: "Payment_Order.pdf",
+      content: fileBuffer //
+    }
+  ]
+});
+
 
   // 🔥 CRITICAL LOG
   console.log("📨 Resend response:", result);
