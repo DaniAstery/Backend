@@ -173,6 +173,56 @@ app.post("/api/verify-code", async (req, res) => {
         });
       } 
 });
+
+app.post("/api/send-order-confirmation", async (req, res) => {
+  try {
+    const { customerEmail, customerName } = req.body;
+
+    // Validation
+    if (!customerEmail || !customerName) {
+      return res.status(400).json({
+        success: false,
+        message: "Missing required fields: customerEmail or customerName.",
+      });
+    }
+
+    // Use Resend or your email service to send the email
+    const { data, error } = await resend.emails.send({
+      from: process.env.RESEND_SENDER_EMAIL, // Ensure this is a verified domain in Resend
+      to: [customerEmail],
+      subject: "Order Confirmation",
+      text: `Dear ${customerName},\n\nWe have received your order. We will get back to you with the tracking number for your items. Usually, confirmation takes 4-5 days. In the meantime, you can reach our support line via WhatsApp at +251998476704 for updates on the status. A commercial invoice will be in your inbox.\n\nThank you for shopping with us!`,
+    });
+
+    if (error) {
+      console.error("Resend API Error:", error);
+      return res.status(400).json({ success: false, error });
+    }
+
+    res.json({
+      success: true,
+      message: "Order confirmation email sent successfully.",
+      data,
+    });
+  } catch (err) {
+    console.error("Send email server error:", err);
+    res.status(500).json({ success: false, message: "Internal server error" });
+  }
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 // ✅ Orders Management
 app.get("/api/orders", verifyAdmin, async (req, res) => {
   try {
