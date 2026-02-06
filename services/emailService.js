@@ -84,7 +84,7 @@ async function generatePaymentPDF(email, currency, cart) {
 
   doc.font("Helvetica-Bold")
     .fontSize(20)
-    .text("Asterya TRADING P.L.C", 0, 35, { align: "center" });
+    .text("Asterya Gemstone Export ", 0, 35, { align: "center" });
 
   doc.font("Helvetica")
     .fontSize(12)
