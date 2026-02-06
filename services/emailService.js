@@ -217,7 +217,7 @@ async function generatePaymentPDF(email, currency, cart) {
 
   doc.fontSize(10)
     .fillColor("#666666")
-    .text("© Asterya One Member Trading P.L.C – All Rights Reserved", { align: "center" });
+    .text("© Daniel Temesgen Mamo – All Rights Reserved", { align: "center" });
 
   doc.end();
 
