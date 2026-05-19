@@ -56,6 +56,7 @@ function verifyCode(email, code) {
 // PDF GENERATION
 // ========================
 async function generatePaymentPDF(email, currency, cart) {
+  alert (currency);
   const parsedCart = Array.isArray(cart)
     ? cart
     : JSON.parse(cart || "[]");
@@ -64,7 +65,7 @@ async function generatePaymentPDF(email, currency, cart) {
 
   const accounts = await BankAccount.find({
     currency,
-    isActive: true
+   // isActive: true
   });
 
   if (!accounts.length) {
