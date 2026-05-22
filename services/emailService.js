@@ -10,6 +10,7 @@ const otpStore = {};
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 async function sendVerificationCode(email, currency, cart) {
+  console.log(currency);
   const code = Math.floor(100000 + Math.random() * 900000);
   otpStore[email] = code;
 
@@ -56,7 +57,7 @@ function verifyCode(email, code) {
 // PDF GENERATION
 // ========================
 async function generatePaymentPDF(email, currency, cart) {
-  alert (currency);
+  console.log(currency);
   const parsedCart = Array.isArray(cart)
     ? cart
     : JSON.parse(cart || "[]");
